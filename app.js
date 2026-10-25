@@ -13,6 +13,7 @@ const DEFAULT_SETTINGS = {
   countdown: true,
   mirror: false,
   quality: '1080',
+  recordMode: 'direct',
 };
 
 function load(key, fallback) {
@@ -207,6 +208,7 @@ bindSetting('set-shade', 'shade', 'value', Number);
 bindSetting('set-countdown', 'countdown', 'checked', Boolean);
 bindSetting('set-mirror', 'mirror', 'checked', Boolean);
 bindSetting('set-quality', 'quality', 'value', String);
+bindSetting('set-mode', 'recordMode', 'value', String);
 
 $('btn-settings').onclick = () => $('settings').classList.remove('hidden');
 $('btn-settings-done').onclick = () => $('settings').classList.add('hidden');
@@ -297,7 +299,7 @@ let wakeLock = null;
 function videoConstraints() {
   const long = settings.quality === '1080' ? 1920 : 1280;
   const short = settings.quality === '1080' ? 1080 : 720;
-  return { facingMode: facing, width: { ideal: long }, height: { ideal: short }, frameRate: { ideal: 30 } };
+  return { facingMode: facing, width: { ideal: long }, height: { ideal: short }, frameRate: { ideal: 30, max: 30 } };
 }
 
 function showMessage(text) {
@@ -329,11 +331,16 @@ async function flipCamera() {
   if (switching) return;
   switching = true;
   $('btn-flip').disabled = true;
+  $('btn-shutter').disabled = true;
   const previous = facing;
   facing = facing === 'user' ? 'environment' : 'user';
+  // Mode mulus merekam langsung dari track kamera, jadi klip yang sedang
+  // berjalan ditutup dulu dan klip baru dimulai dengan kamera berikutnya.
+  const split = recording && !canvasMode();
   try {
+    if (split) await finishRecorder();
     // iPhone hanya bisa membuka satu kamera sekaligus, jadi kamera lama dimatikan dulu.
-    // Selama jeda singkat ini kanvas rekaman menahan frame terakhir.
+    // Di mode satu file, kanvas menahan frame terakhir selama jeda singkat ini.
     if (videoTrack) videoTrack.stop();
     await startCamera(false);
   } catch (e) {
@@ -345,7 +352,12 @@ async function flipCamera() {
     }
   } finally {
     switching = false;
+    if (recording) {
+      if (split) startRecorder();
+      else scheduleDraw();
+    }
     $('btn-flip').disabled = false;
+    $('btn-shutter').disabled = false;
   }
 }
 
@@ -380,8 +392,8 @@ async function openRecorder() {
   }
 }
 
-function closeRecorder() {
-  if (recorder) stopRecording(false);
+async function closeRecorder() {
+  if (recording) await stopSession(false);
   setScrolling(false);
   stopCamera();
   if (wakeLock) wakeLock.release().catch(() => {});
@@ -392,26 +404,32 @@ function closeRecorder() {
 $('btn-rec-close').onclick = closeRecorder;
 
 // ---------- Perekaman ----------
-// Video direkam dari kanvas, bukan langsung dari kamera. Dengan begitu kamera bisa
-// diganti di tengah rekaman tanpa memutus file, dan hasilnya selalu 9:16.
+// Mode mulus (bawaan): video direkam langsung dari kamera sehingga frame rate-nya
+// stabil. Ganti kamera saat merekam menghasilkan klip baru.
+// Mode satu file: video direkam dari kanvas yang digambar ulang setiap ada frame
+// kamera baru, sehingga ganti kamera tetap menghasilkan satu file 9:16.
 
 const canvas = document.createElement('canvas');
 const ctx = canvas.getContext('2d');
-let recorder = null;
-let chunks = [];
+let recording = false; // satu sesi rekam, dari tombol rekam sampai tombol stop
+let recorder = null;   // { rec, done } untuk klip yang sedang direkam
+let clips = [];
 let recordStart = 0;
 let timerId = null;
 let drawing = false;
-let keepRecording = true;
-let lastBlob = null;
+let drawGen = 0;
+
+function canvasMode() {
+  return settings.recordMode === 'canvas';
+}
 
 function pickMimeType() {
   const types = ['video/mp4;codecs=avc1,mp4a', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm'];
   return types.find((t) => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || '';
 }
 
-function drawFrame() {
-  if (!drawing) return;
+function drawFrame(gen) {
+  if (!drawing || gen !== drawGen) return;
   const cam = $('cam');
   const vw = cam.videoWidth;
   const vh = cam.videoHeight;
@@ -430,7 +448,61 @@ function drawFrame() {
     ctx.drawImage(cam, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
     ctx.restore();
   }
-  requestAnimationFrame(drawFrame);
+  scheduleDraw(gen);
+}
+
+// Gambar tepat saat kamera mengirim frame baru agar jarak antar-frame rata.
+function scheduleDraw(gen) {
+  if (!drawing) return;
+  if (gen === undefined) gen = ++drawGen;
+  const cam = $('cam');
+  if ('requestVideoFrameCallback' in cam) cam.requestVideoFrameCallback(() => drawFrame(gen));
+  else requestAnimationFrame(() => drawFrame(gen));
+}
+
+function startRecorder() {
+  const tracks = [];
+  if (canvasMode()) {
+    const short = settings.quality === '1080' ? 1080 : 720;
+    canvas.width = short;
+    canvas.height = Math.round((short * 16) / 9);
+    drawing = true;
+    scheduleDraw();
+    // Tanpa angka fps: satu gambar di kanvas = satu frame video.
+    tracks.push(canvas.captureStream().getVideoTracks()[0]);
+  } else {
+    tracks.push(videoTrack);
+  }
+  if (audioTrack) tracks.push(audioTrack);
+
+  const mimeType = pickMimeType();
+  const rec = new MediaRecorder(new MediaStream(tracks), {
+    mimeType: mimeType || undefined,
+    videoBitsPerSecond: settings.quality === '1080' ? 8000000 : 5000000,
+  });
+  const parts = [];
+  rec.ondataavailable = (e) => e.data && e.data.size && parts.push(e.data);
+  const done = new Promise((resolve) => {
+    rec.onstop = () => {
+      if (canvasMode()) {
+        drawing = false;
+        tracks[0].stop();
+      }
+      resolve(new Blob(parts, { type: rec.mimeType || mimeType || 'video/mp4' }));
+    };
+  });
+  // Tanpa timeslice agar file MP4 dibuat utuh sekali di akhir, bukan terpotong-potong.
+  rec.start();
+  recorder = { rec, done };
+}
+
+async function finishRecorder() {
+  const r = recorder;
+  if (!r) return;
+  recorder = null;
+  if (r.rec.state !== 'inactive') r.rec.stop();
+  const blob = await r.done;
+  if (blob.size) clips.push(blob);
 }
 
 function countdown() {
@@ -457,14 +529,15 @@ function updateTimer() {
   const sec = Math.floor((Date.now() - recordStart) / 1000);
   const mm = String(Math.floor(sec / 60)).padStart(2, '0');
   const ss = String(sec % 60).padStart(2, '0');
-  $('rec-timer').textContent = `● ${mm}:${ss}`;
+  const part = clips.length ? ` · klip ${clips.length + 1}` : '';
+  $('rec-timer').textContent = `● ${mm}:${ss}${part}`;
 }
 
 let starting = false;
 
-async function startRecording() {
+async function startSession() {
   if (!videoTrack || starting) return;
-  if (!window.MediaRecorder || !canvas.captureStream) {
+  if (!window.MediaRecorder || (canvasMode() && !canvas.captureStream)) {
     showMessage('Perekaman butuh iOS 14.3 atau lebih baru.');
     return;
   }
@@ -475,31 +548,9 @@ async function startRecording() {
   starting = false;
   $('btn-shutter').disabled = false;
 
-  const short = settings.quality === '1080' ? 1080 : 720;
-  canvas.width = short;
-  canvas.height = Math.round((short * 16) / 9);
-  drawing = true;
-  drawFrame();
-
-  const tracks = canvas.captureStream(30).getVideoTracks();
-  if (audioTrack) tracks.push(audioTrack);
-  const mimeType = pickMimeType();
-  chunks = [];
-  keepRecording = true;
-  recorder = new MediaRecorder(new MediaStream(tracks), {
-    mimeType: mimeType || undefined,
-    videoBitsPerSecond: short === 1080 ? 8000000 : 5000000,
-  });
-  recorder.ondataavailable = (e) => e.data && e.data.size && chunks.push(e.data);
-  recorder.onstop = () => {
-    drawing = false;
-    tracks[0].stop();
-    if (!keepRecording) return;
-    lastBlob = new Blob(chunks, { type: recorder.mimeType || mimeType || 'video/mp4' });
-    recorder = null;
-    openReview();
-  };
-  recorder.start(1000);
+  clips = [];
+  recording = true;
+  startRecorder();
 
   recordStart = Date.now();
   updateTimer();
@@ -509,40 +560,58 @@ async function startRecording() {
   setScrolling(true);
 }
 
-function stopRecording(keep = true) {
-  if (!recorder) return;
-  keepRecording = keep;
+async function stopSession(keep = true) {
+  if (!recording) return;
+  recording = false;
   clearInterval(timerId);
   $('rec-timer').classList.add('hidden');
   $('btn-shutter').classList.remove('recording');
   setScrolling(false);
-  if (recorder.state !== 'inactive') recorder.stop();
-  if (!keep) recorder = null;
+  await finishRecorder();
+  if (keep && clips.length) openReview();
+  else clips = [];
 }
 
-$('btn-shutter').onclick = () => (recorder ? stopRecording(true) : startRecording());
+$('btn-shutter').onclick = () => (recording ? stopSession(true) : startSession());
 
 // Jika aplikasi ditinggal (misal ada telepon), rekaman disimpan agar tidak hilang.
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden && recorder) stopRecording(true);
+  if (document.hidden && recording) stopSession(true);
   else if (!document.hidden && $('view-recorder').classList.contains('active')) requestWakeLock();
 });
 
 // ---------- Hasil rekaman ----------
 
-function videoFileName() {
+function videoFileName(blob, index) {
   const d = new Date();
   const pad = (n) => String(n).padStart(2, '0');
-  const ext = lastBlob.type.includes('mp4') ? 'mp4' : 'webm';
-  return `affiliate-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}.${ext}`;
+  const ext = blob.type.includes('mp4') ? 'mp4' : 'webm';
+  const part = clips.length > 1 ? `-klip${index + 1}` : '';
+  return `affiliate-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}${part}.${ext}`;
+}
+
+function playClip(index) {
+  const pb = $('playback');
+  if (pb.src) URL.revokeObjectURL(pb.src);
+  pb.src = URL.createObjectURL(clips[index]);
+  $('clip-tabs').querySelectorAll('button').forEach((b, i) => b.classList.toggle('primary', i === index));
 }
 
 function openReview() {
   // Kamera dimatikan selama melihat hasil supaya hemat baterai.
   stopCamera();
-  const pb = $('playback');
-  if (pb.src) URL.revokeObjectURL(pb.src);
-  pb.src = URL.createObjectURL(lastBlob);
+  const tabs = $('clip-tabs');
+  tabs.innerHTML = '';
+  tabs.classList.toggle('hidden', clips.length < 2);
+  clips.forEach((_, i) => {
+    const b = document.createElement('button');
+    b.className = 'btn small';
+    b.textContent = 'Klip ' + (i + 1);
+    b.onclick = () => playClip(i);
+    tabs.appendChild(b);
+  });
+  $('btn-save').textContent = clips.length > 1 ? `⬇︎ Simpan ${clips.length} video` : '⬇︎ Simpan video';
+  playClip(0);
   show('view-review');
 }
 
@@ -552,23 +621,24 @@ $('btn-retake').onclick = () => {
 };
 
 $('btn-save').onclick = async () => {
-  const name = videoFileName();
-  const file = new File([lastBlob], name, { type: lastBlob.type });
-  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+  const files = clips.map((blob, i) => new File([blob], videoFileName(blob, i), { type: blob.type }));
+  if (navigator.canShare && navigator.canShare({ files })) {
     try {
-      await navigator.share({ files: [file] });
+      await navigator.share({ files });
       return;
     } catch (e) {
       if (e.name === 'AbortError') return;
     }
   }
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(lastBlob);
-  a.download = name;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+  files.forEach((file) => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(file);
+    a.download = file.name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+  });
 };
 
 // ---------- Mulai ----------

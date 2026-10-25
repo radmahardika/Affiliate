@@ -92,7 +92,14 @@
         <label class="row check">Hitung mundur 3-2-1
           <input id="set-countdown" type="checkbox">
         </label>
-        <label class="row check">Cerminkan hasil kamera depan
+        <label class="row">Mode rekam
+          <select id="set-mode">
+            <option value="direct">Mulus – langsung dari kamera (disarankan)</option>
+            <option value="canvas">Satu file walau ganti kamera</option>
+          </select>
+          <small class="note">Mode mulus: ganti kamera saat merekam menghasilkan klip terpisah. Gabungkan di CapCut/TikTok.</small>
+        </label>
+        <label class="row check">Cerminkan kamera depan (mode satu file)
           <input id="set-mirror" type="checkbox">
         </label>
         <label class="row">Kualitas video
@@ -109,6 +116,7 @@
   <!-- Hasil rekaman -->
   <section id="view-review" class="view review">
     <video id="playback" playsinline controls></video>
+    <div id="clip-tabs" class="clip-tabs hidden"></div>
     <div class="review-actions">
       <button id="btn-retake" class="btn">↺ Rekam ulang</button>
       <button id="btn-save" class="btn primary">⬇︎ Simpan video</button>
