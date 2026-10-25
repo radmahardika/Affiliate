@@ -148,7 +148,7 @@ ol.lines li { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 4p
       </div>
       <div class="field">
         <label for="solusi">Solusi <span class="hint">1–2 kalimat</span></label>
-        <textarea id="solusi" rows="3" placeholder="contoh: Kandungan niacinamide-nya bikin kulit lebih cerah, minyak juga lebih terkontrol."></textarea>
+        <textarea id="solusi" rows="3" placeholder="contoh: Tinggal semprot, diemin 5 menit, langsung kinclong tanpa digosok."></textarea>
       </div>
       <div class="field">
         <label for="produk">Nama produk</label>
@@ -219,43 +219,43 @@ ol.lines li { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 4p
     urg:   { label: "Urgensi", color: "var(--seg-urg)" }
   };
 
-  // {m} masalah, {s} solusi, {p} produk, {c} cta (huruf kecil), {C} cta (kapital awal)
+  // {m} masalah, {M} masalah (kapital awal), {s} solusi, {l} solusi (huruf kecil, setelah "..."), {p} produk, {c} cta (huruf kecil), {C} cta (kapital awal)
   // opt: segmen opsional yang ditambahkan kalau durasi masih muat, sesuai urutan prioritas
   const STYLES = [
     {
       name: "Pertanyaan Relate",
       segs: [
-        { k: "hook", t: ["Kamu juga lagi pusing sama {m}?", "Siapa di sini yang masih struggling sama {m}?", "Pernah nggak sih kesel banget gara-gara {m}?"], cue: "Nada naik di akhir, tempo cepat, tekan kata masalahnya." },
-        { k: "agit", opt: 1, t: ["Udah coba macem-macem, tapi hasilnya gitu-gitu aja.", "Rasanya udah capek nyoba, tapi tetep nggak ada perubahan."], cue: "Sedikit turun, nada empati." },
-        { k: "sol", t: ["Nah, coba deh {p}. {s}", "Tenang, sekarang ada {p}. {s}"], cue: "Ceria, sebut nama produk pelan dan jelas." },
-        { k: "ben", opt: 2, t: ["Praktis, gampang dipakai, dan hasilnya beneran kerasa.", "Pantesan aja banyak yang repeat order."], cue: "Yakin, sambil senyum." },
-        { k: "ben", opt: 4, t: ["Review-nya juga bagus-bagus, bukan cuma klaim doang.", "Aku sendiri udah repeat order, saking cocoknya."], cue: "Santai tapi meyakinkan, seperti kasih testimoni." },
-        { k: "cta", t: ["{C}!", "Langsung aja, {c}!"], cue: "Energi paling tinggi, tegas." },
-        { k: "urg", opt: 3, t: ["Mumpung masih promo!", "Sebelum stoknya habis lagi!"], cue: "Cepat dan mendesak." }
+        { k: "hook", t: ["Guys, ada yang sama kayak aku nggak? {M}.", "Siapa di sini yang masih ribet sama {m}?", "Kamu juga lagi kesel sama {m}? Sama, aku dulu juga gitu."], cue: "Kayak lagi nanya ke temen, nada naik di akhir. Jangan kebaca kayak baca teks." },
+        { k: "agit", opt: 1, t: ["Udah coba ini-itu, ujung-ujungnya balik lagi ke masalah yang sama.", "Sumpah, capek banget nggak sih?"], cue: "Agak ngeluh, boleh sambil ketawa kecil." },
+        { k: "sol", t: ["Nah, terus aku nemu {p}. {s}", "Terus aku iseng coba {p}. Ternyata... {l}"], cue: "Jeda sebentar sebelum nama produk, terus sebut pelan-pelan biar kedengeran jelas." },
+        { k: "ben", opt: 2, t: ["Beneran deh, nyesel nggak beli dari dulu.", "Dan harganya tuh masih masuk akal banget."], cue: "Santai, senyum pas ngomong." },
+        { k: "ben", opt: 4, t: ["Aku udah pakai beberapa minggu, so far aman banget.", "Pas barangnya dateng, aslinya malah lebih bagus dari fotonya."], cue: "Kayak kasih testimoni jujur, tempo biasa aja." },
+        { k: "cta", t: ["Udah, langsung aja {c}.", "Yang penasaran, {c} ya!"], cue: "Naikin energi dikit, tapi tetap ramah." },
+        { k: "urg", opt: 3, t: ["Mumpung lagi diskon, lumayan banget.", "Kemarin sempet kosong, jadi buruan sebelum habis lagi."], cue: "Agak cepat, kayak ngingetin temen." }
       ]
     },
     {
       name: "Stop Scroll",
       segs: [
-        { k: "hook", t: ["Stop! Jangan scroll dulu kalau kamu masih ngalamin {m}.", "Tunggu! Ini khusus buat kamu yang punya masalah {m}."], cue: "Kata pertama dihentak keras, lalu jeda sepersekian detik." },
-        { k: "agit", opt: 2, t: ["Karena bisa jadi selama ini kamu salah pilih solusi.", "Masalah kayak gini jangan dibiarin terus."], cue: "Serius, sedikit pelan." },
-        { k: "sol", t: ["Kamu cuma butuh {p}. {s}", "Jawabannya ada di {p}. {s}"], cue: "Mantap, sebut nama produk dengan jelas." },
-        { k: "ben", opt: 3, t: ["Simpel, nggak ribet, dan cocok buat dipakai tiap hari.", "Sekali coba, kamu bakal ngerti kenapa ini viral."], cue: "Meyakinkan." },
-        { k: "ben", opt: 4, t: ["Udah banyak yang buktiin sendiri, cek aja review-nya.", "Pemakaiannya gampang, hasilnya bisa kamu rasain sendiri."], cue: "Yakin, tempo stabil." },
-        { k: "cta", t: ["{C}!", "Jadi tunggu apa lagi? {C}!"], cue: "Tegas, energi naik." },
-        { k: "urg", opt: 1, t: ["Harganya lagi turun, jangan sampai kehabisan!", "Promonya nggak lama, buruan!"], cue: "Cepat dan mendesak." }
+        { k: "hook", t: ["Eh, bentar, jangan di-skip dulu! Ini buat kamu yang masih berurusan sama {m}.", "Stop dulu scroll-nya. Kalau kamu masih sering ngalamin {m}, dengerin ini."], cue: "Kata pertama dihentak, terus jeda setengah detik." },
+        { k: "agit", opt: 2, t: ["Soalnya aku dulu juga gitu, dan ternyata salahnya di barang yang aku pakai.", "Jangan sampai kayak aku, buang-buang duit buat yang nggak ngaruh."], cue: "Turunin nada, kayak lagi ngaku." },
+        { k: "sol", t: ["Coba deh pakai {p}. {s}", "Aku sekarang pakai {p}. {s}"], cue: "Mantap, nama produk disebut jelas." },
+        { k: "ben", opt: 3, t: ["Sekali coba, kamu bakal ngerti kenapa ini rame banget di FYP.", "Nggak ribet sama sekali, beneran."], cue: "Yakin, santai." },
+        { k: "ben", opt: 4, t: ["Review-nya juga bagus-bagus, bukan cuma aku doang yang bilang.", "Udah ribuan yang beli, rating-nya juga tinggi."], cue: "Kayak lagi ngebuktiin, tempo stabil." },
+        { k: "cta", t: ["Udah, nggak usah mikir lama. {C}!", "Jadi nunggu apa lagi? {C}!"], cue: "Tegas, energi paling tinggi." },
+        { k: "urg", opt: 1, t: ["Lagi promo soalnya, sayang banget kalau kelewat.", "Harganya lagi turun, nggak tahu sampai kapan."], cue: "Agak cepat dan ngegas dikit." }
       ]
     },
     {
       name: "Curhat / POV",
       segs: [
-        { k: "hook", t: ["Jujur, dulu aku hampir nyerah sama {m}.", "POV: kamu udah capek banget sama {m}."], cue: "Suara curhat, akrab, seperti ngobrol ke teman." },
-        { k: "agit", opt: 1, t: ["Mau ngapa-ngapain jadi nggak tenang, serba salah.", "Udah gonta-ganti produk, tetep aja nggak ngaruh."], cue: "Pelan, sedikit mengeluh." },
-        { k: "sol", t: ["Sampai akhirnya aku nemu {p}. {s}", "Terus temenku nyaranin {p}. {s}"], cue: "Nada berubah jadi lega dan antusias." },
-        { k: "ben", opt: 2, t: ["Sekarang? Beda banget rasanya.", "Nyesel kenapa nggak dari dulu."], cue: "Senyum, puas." },
-        { k: "ben", opt: 4, t: ["Sekarang aku jadi lebih pede dan nggak kepikiran lagi.", "Bahkan temen-temenku sampai nanya aku pakai apa."], cue: "Bangga, nada naik sedikit." },
-        { k: "cta", t: ["Kamu juga harus coba. {C}!", "Yang punya masalah sama, {c}!"], cue: "Hangat tapi tegas." },
-        { k: "urg", opt: 3, t: ["Mumpung lagi diskon!", "Mumpung harganya masih miring!"], cue: "Ringan, cepat." }
+        { k: "hook", t: ["Jujur ya, dulu aku hampir nyerah sama {m}.", "Aku tuh dulu tiap hari stres gara-gara {m}."], cue: "Pelan, kayak mulai curhat. Boleh ada tarikan napas di awal." },
+        { k: "agit", opt: 1, t: ["Udah gonta-ganti barang, hasilnya gitu-gitu aja.", "Sampai mikir, apa emang nggak ada yang beneran works?"], cue: "Nada capek, agak ngeluh." },
+        { k: "sol", t: ["Sampai akhirnya temen aku ngerekomendasiin {p}. {s}", "Terus aku nemu {p} ini. Awalnya ragu, tapi... {l}"], cue: "Nada berubah jadi lega, mulai semangat." },
+        { k: "ben", opt: 2, t: ["Sekarang? Udah nggak kepikiran lagi.", "Asli, nyesel kenapa nggak dari dulu."], cue: "Senyum, puas." },
+        { k: "ben", opt: 4, t: ["Bahkan orang rumah sampai nanya, ini beli di mana?", "Temen-temen aku juga akhirnya ikutan beli."], cue: "Agak bangga, nada naik dikit." },
+        { k: "cta", t: ["Kalau kamu ngalamin hal yang sama, {c} ya.", "Kamu harus coba juga sih. {C}!"], cue: "Hangat, kayak ngasih saran ke temen." },
+        { k: "urg", opt: 3, t: ["Mumpung lagi murah!", "Mumpung harganya lagi turun."], cue: "Ringan dan cepat." }
       ]
     }
   ];
@@ -273,11 +273,11 @@ ol.lines li { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 4p
     let s = endSentence(capFirst(clean(raw.solusi)));
     let p = stripEnd(clean(raw.produk));
     let c = stripEnd(clean(raw.cta)) || "klik keranjang kuning sekarang";
-    return { m, s, p, c: lowFirst(c), C: capFirst(c) };
+    return { m, M: capFirst(m), s, l: lowFirst(s), p, c: lowFirst(c), C: capFirst(c) };
   }
 
   function fill(tpl, v) {
-    return tpl.replace(/\{(m|s|p|c|C)\}/g, (_, k) => v[k]);
+    return tpl.replace(/\{(m|M|s|l|p|c|C)\}/g, (_, k) => v[k]);
   }
 
   // ---------- duration estimate (Bahasa Indonesia ~ suku kata per detik) ----------
