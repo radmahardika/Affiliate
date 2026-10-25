@@ -444,8 +444,19 @@ function canvasMode() {
   return settings.recordMode === 'canvas';
 }
 
+// Suara harus AAC (mp4a.40.2): Safari bisa memilih Opus bila tidak disebut,
+// dan Opus di dalam MP4 terputar tanpa suara di CapCut.
 function pickMimeType() {
-  const types = ['video/mp4;codecs=avc1,mp4a', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm'];
+  const types = [
+    'video/mp4;codecs="avc1.640028,mp4a.40.2"',
+    'video/mp4;codecs="avc1.4d002a,mp4a.40.2"',
+    'video/mp4;codecs="avc1.42e01f,mp4a.40.2"',
+    'video/mp4;codecs="avc1,mp4a.40.2"',
+    'video/mp4;codecs=avc1,mp4a',
+    'video/mp4',
+    'video/webm;codecs=vp9,opus',
+    'video/webm',
+  ];
   return types.find((t) => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || '';
 }
 
@@ -532,6 +543,7 @@ function startRecorder() {
   const rec = new MediaRecorder(new MediaStream(tracks), {
     mimeType: mimeType || undefined,
     videoBitsPerSecond: settings.quality === '1080' ? 8000000 : 5000000,
+    audioBitsPerSecond: 128000,
   });
   const parts = [];
   rec.ondataavailable = (e) => e.data && e.data.size && parts.push(e.data);
@@ -650,6 +662,7 @@ function playClip(index) {
   if (pb.src) URL.revokeObjectURL(pb.src);
   pb.src = URL.createObjectURL(clips[index]);
   $('no-audio').classList.add('hidden');
+  $('clip-format').textContent = 'Format: ' + (clips[index].type || 'tidak diketahui');
   pb.onloadedmetadata = () => {
     // Safari bisa melaporkan jumlah track suara; browser lain dilewati.
     if (pb.audioTracks && pb.audioTracks.length === 0) $('no-audio').classList.remove('hidden');
