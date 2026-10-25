@@ -11,6 +11,7 @@ const DEFAULT_SETTINGS = {
   shade: 50,
   speed: 4,
   countdown: true,
+  voiceProcessing: false,
   mirror: false,
   quality: '1080',
   recordMode: 'direct',
@@ -206,6 +207,14 @@ bindSetting('set-font', 'fontSize', 'value', Number);
 bindSetting('set-height', 'height', 'value', Number);
 bindSetting('set-shade', 'shade', 'value', Number);
 bindSetting('set-countdown', 'countdown', 'checked', Boolean);
+bindSetting('set-voice', 'voiceProcessing', 'checked', Boolean);
+$('set-voice').addEventListener('change', () => {
+  // Pengaturan mikrofon baru berlaku setelah mikrofon dibuka ulang.
+  if (videoTrack && !recording) {
+    if (audioTrack) audioTrack.stop();
+    ensureAudio();
+  }
+});
 bindSetting('set-mirror', 'mirror', 'checked', Boolean);
 bindSetting('set-quality', 'quality', 'value', String);
 bindSetting('set-mode', 'recordMode', 'value', String);
@@ -293,7 +302,13 @@ $('btn-faster').onclick = () => {
 let facing = 'user';
 let videoTrack = null;
 let audioTrack = null;
-const AUDIO = { echoCancellation: true, noiseSuppression: true };
+
+// Pemrosesan suara ala telepon (peredam gema/bising) membuat suara tipis, jadi
+// bawaannya mati agar suara sejernih aplikasi Kamera.
+function audioConstraints() {
+  const on = settings.voiceProcessing;
+  return { echoCancellation: on, noiseSuppression: on, autoGainControl: on, sampleRate: 48000 };
+}
 let switching = false;
 let wakeLock = null;
 
@@ -312,7 +327,7 @@ function showMessage(text) {
 // Mikrofon selalu diminta ulang bersama kamera: di iPhone, meminta kamera lagi
 // bisa membuat track mikrofon yang lama ikut mati/bisu.
 async function startCamera() {
-  const stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints(), audio: AUDIO });
+  const stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints(), audio: audioConstraints() });
   replaceAudio(stream.getAudioTracks()[0] || null);
   videoTrack = stream.getVideoTracks()[0];
   const cam = $('cam');
@@ -330,7 +345,7 @@ function replaceAudio(track) {
 async function ensureAudio() {
   if (audioTrack && audioTrack.readyState === 'live' && !audioTrack.muted) return;
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: AUDIO });
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints() });
     replaceAudio(stream.getAudioTracks()[0] || null);
   } catch (e) {
     // Tetap merekam tanpa suara; layar hasil akan memberi peringatan.
@@ -543,7 +558,7 @@ function startRecorder() {
   const rec = new MediaRecorder(new MediaStream(tracks), {
     mimeType: mimeType || undefined,
     videoBitsPerSecond: settings.quality === '1080' ? 8000000 : 5000000,
-    audioBitsPerSecond: 128000,
+    audioBitsPerSecond: 192000,
   });
   const parts = [];
   rec.ondataavailable = (e) => e.data && e.data.size && parts.push(e.data);
