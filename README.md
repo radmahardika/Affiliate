@@ -3,7 +3,7 @@
 Web app untuk merumuskan naskah voice over affiliate (±20 detik, maksimal 25 detik).
 
 Input: **Masalah** (hook), **Solusi**, **Nama produk**, **Ajakan/CTA**.
-Output: 5 versi naskah (Pertanyaan Relate, Stop Scroll, Curhat/POV, Fakta Mengejutkan, Promo Langsung)
+Output: 3 versi naskah (Pertanyaan Relate, Stop Scroll, Curhat/POV)
 lengkap dengan timestamp per bagian, estimasi durasi, dan arahan baca.
 
 Cara pakai: buka `index.html` di browser. Tidak perlu server atau API key.
