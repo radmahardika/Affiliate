@@ -4,7 +4,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
-/* Layout: studio console — form panel on the left (sticky), script takes on the right, each take has a 0–25s timeline strip */
+/* Layout: studio console — form panel on the left (sticky), script takes on the right, each take has a 0–30s timeline strip */
 :root {
   --bg: #f3f4f8;
   --panel: #ffffff;
@@ -130,7 +130,7 @@ ol.lines li { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 4p
   <header class="top">
     <span class="tally">ON AIR</span>
     <h1>Racik Naskah VO</h1>
-    <p class="lede">Isi masalah, solusi, nama produk, dan ajakan. Kamu langsung dapat 3 versi naskah voice over ±20 detik (maksimal 25 detik) lengkap dengan timing dan arahan baca, siap dipakai untuk konten affiliate.</p>
+    <p class="lede">Isi masalah, solusi, nama produk, dan ajakan. Kamu langsung dapat 3 versi naskah voice over ±20 detik (bisa sampai 30 detik) lengkap dengan timing dan arahan baca, siap dipakai untuk konten affiliate.</p>
   </header>
 
   <div class="grid">
@@ -154,7 +154,7 @@ ol.lines li { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 4p
       <div class="row2">
         <div class="field">
           <label for="durasi">Target <span class="dur-val" id="durasiVal">20 dtk</span></label>
-          <input type="range" id="durasi" min="15" max="25" step="1" value="20">
+          <input type="range" id="durasi" min="15" max="30" step="1" value="20">
         </div>
         <div class="field">
           <label for="tempo">Tempo baca</label>
@@ -194,7 +194,7 @@ ol.lines li { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 4p
 <script>
 (function () {
   const $ = (id) => document.getElementById(id);
-  const HARD_MAX = 25;
+  const HARD_MAX = 30;
 
   const SAMPLE = {
     masalah: "muka kusam dan berminyak padahal udah rajin cuci muka",
@@ -222,6 +222,7 @@ ol.lines li { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 4p
         { k: "agit", opt: 1, t: ["Udah coba macem-macem, tapi hasilnya gitu-gitu aja.", "Rasanya udah capek nyoba, tapi tetep nggak ada perubahan."], cue: "Sedikit turun, nada empati." },
         { k: "sol", t: ["Nah, coba deh {p}. {s}", "Tenang, sekarang ada {p}. {s}"], cue: "Ceria, sebut nama produk pelan dan jelas." },
         { k: "ben", opt: 2, t: ["Praktis, gampang dipakai, dan hasilnya beneran kerasa.", "Pantesan aja banyak yang repeat order."], cue: "Yakin, sambil senyum." },
+        { k: "ben", opt: 4, t: ["Review-nya juga bagus-bagus, bukan cuma klaim doang.", "Aku sendiri udah repeat order, saking cocoknya."], cue: "Santai tapi meyakinkan, seperti kasih testimoni." },
         { k: "cta", t: ["{C}!", "Langsung aja, {c}!"], cue: "Energi paling tinggi, tegas." },
         { k: "urg", opt: 3, t: ["Mumpung masih promo!", "Sebelum stoknya habis lagi!"], cue: "Cepat dan mendesak." }
       ]
@@ -233,6 +234,7 @@ ol.lines li { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 4p
         { k: "agit", opt: 2, t: ["Karena bisa jadi selama ini kamu salah pilih solusi.", "Masalah kayak gini jangan dibiarin terus."], cue: "Serius, sedikit pelan." },
         { k: "sol", t: ["Kamu cuma butuh {p}. {s}", "Jawabannya ada di {p}. {s}"], cue: "Mantap, sebut nama produk dengan jelas." },
         { k: "ben", opt: 3, t: ["Simpel, nggak ribet, dan cocok buat dipakai tiap hari.", "Sekali coba, kamu bakal ngerti kenapa ini viral."], cue: "Meyakinkan." },
+        { k: "ben", opt: 4, t: ["Udah banyak yang buktiin sendiri, cek aja review-nya.", "Pemakaiannya gampang, hasilnya bisa kamu rasain sendiri."], cue: "Yakin, tempo stabil." },
         { k: "cta", t: ["{C}!", "Jadi tunggu apa lagi? {C}!"], cue: "Tegas, energi naik." },
         { k: "urg", opt: 1, t: ["Harganya lagi turun, jangan sampai kehabisan!", "Promonya nggak lama, buruan!"], cue: "Cepat dan mendesak." }
       ]
@@ -244,6 +246,7 @@ ol.lines li { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 4p
         { k: "agit", opt: 1, t: ["Mau ngapa-ngapain jadi nggak tenang, serba salah.", "Udah gonta-ganti produk, tetep aja nggak ngaruh."], cue: "Pelan, sedikit mengeluh." },
         { k: "sol", t: ["Sampai akhirnya aku nemu {p}. {s}", "Terus temenku nyaranin {p}. {s}"], cue: "Nada berubah jadi lega dan antusias." },
         { k: "ben", opt: 2, t: ["Sekarang? Beda banget rasanya.", "Nyesel kenapa nggak dari dulu."], cue: "Senyum, puas." },
+        { k: "ben", opt: 4, t: ["Sekarang aku jadi lebih pede dan nggak kepikiran lagi.", "Bahkan temen-temenku sampai nanya aku pakai apa."], cue: "Bangga, nada naik sedikit." },
         { k: "cta", t: ["Kamu juga harus coba. {C}!", "Yang punya masalah sama, {c}!"], cue: "Hangat tapi tegas." },
         { k: "urg", opt: 3, t: ["Mumpung lagi diskon!", "Mumpung harganya masih miring!"], cue: "Ringan, cepat." }
       ]
@@ -344,7 +347,7 @@ ol.lines li { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 4p
           <span class="cue">${esc(l.cue)}</span>
         </li>`).join("");
       let warn = "";
-      if (tk.total > HARD_MAX) warn = '<p class="note">Lewat 25 detik. Persingkat kalimat Solusi atau Masalah supaya pas.</p>';
+      if (tk.total > HARD_MAX) warn = '<p class="note">Lewat 30 detik. Persingkat kalimat Solusi atau Masalah supaya pas.</p>';
       else if (tk.total < target - 4) warn = '<p class="note">Masih di bawah target. Tambahkan detail manfaat di kolom Solusi supaya lebih padat.</p>';
       return `
       <article class="take">
