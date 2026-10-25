@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Racik Naskah VO</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: studio console — form panel on the left (sticky), script takes on the right, each take has a 0–25s timeline strip */
+:root {
+  --bg: #f3f4f8;
+  --panel: #ffffff;
+  --ink: #161823;
+  --muted: #5d6273;
+  --line: #dfe1ea;
+  --onair: #e2412b;
+  --onair-soft: #fde8e4;
+  --seg-hook: #e2412b;
+  --seg-agit: #d98a12;
+  --seg-sol: #0f8f7e;
+  --seg-ben: #3f8f2f;
+  --seg-cta: #4b4fd6;
+  --seg-urg: #a13fb8;
+  --ok: #138a4a;
+  --warn: #b26a00;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111219; --panel: #1a1c26; --ink: #eceef6; --muted: #a0a5b8; --line: #2c2f3d;
+    --onair: #ff5a41; --onair-soft: #3a1d18;
+    --seg-hook: #ff5a41; --seg-agit: #f0a53a; --seg-sol: #2cc3ad; --seg-ben: #6cc35a; --seg-cta: #8b8ff5; --seg-urg: #cf74e4;
+    --ok: #4fd18a; --warn: #f0b04a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111219; --panel: #1a1c26; --ink: #eceef6; --muted: #a0a5b8; --line: #2c2f3d;
+  --onair: #ff5a41; --onair-soft: #3a1d18;
+  --seg-hook: #ff5a41; --seg-agit: #f0a53a; --seg-sol: #2cc3ad; --seg-ben: #6cc35a; --seg-cta: #8b8ff5; --seg-urg: #cf74e4;
+  --ok: #4fd18a; --warn: #f0b04a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 24px 48px;
+}
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 24px; }
+header.top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+.tally {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--font-mono); font-size: 11px; font-weight: 600; letter-spacing: .14em;
+  color: var(--onair); border: 1.5px solid var(--onair); border-radius: 4px; padding: 3px 8px;
+}
+.tally::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--onair); box-shadow: 0 0 0 3px var(--onair-soft); }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(28px, 4vw, 40px); line-height: 1.05; margin: 0; letter-spacing: -.02em; text-wrap: balance; }
+.lede { color: var(--muted); margin: 0; max-width: 62ch; flex-basis: 100%; }
+
+.grid { display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+
+form.panel {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+  padding: 20px; display: grid; gap: 16px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px);
+}
+@media (max-width: 860px) { form.panel { position: static; } }
+.field { display: grid; gap: 6px; }
+label, .lbl { font-weight: 600; font-size: 13px; display: flex; justify-content: space-between; gap: 8px; }
+label .hint, .lbl .hint { font-weight: 400; color: var(--muted); }
+textarea, input[type="text"], select {
+  width: 100%; font: inherit; color: var(--ink); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 6px; padding: 9px 11px; resize: vertical;
+}
+textarea:focus, input:focus, select:focus, button:focus-visible { outline: 2px solid var(--onair); outline-offset: 1px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+input[type="range"] { width: 100%; accent-color: var(--onair); }
+.dur-val { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--onair); }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+button {
+  font: inherit; font-weight: 600; cursor: pointer; border-radius: 6px; padding: 10px 14px;
+  border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+}
+button.primary { background: var(--onair); border-color: var(--onair); color: #fff; flex: 1; }
+button:hover { filter: brightness(1.05); }
+.note { font-size: 12px; color: var(--muted); margin: 0; }
+
+.takes { display: grid; gap: 16px; min-width: 0; }
+.takes-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px; }
+.takes-head h2 { font-family: var(--font-display); font-weight: 700; font-size: 20px; margin: 0; }
+.legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 5px; }
+.legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
+article.take { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; display: grid; gap: 14px; min-width: 0; }
+.take-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.take-no { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.take-name { font-family: var(--font-display); font-weight: 700; font-size: 18px; margin: 0; }
+.pill { font-family: var(--font-mono); font-size: 12px; font-variant-numeric: tabular-nums; padding: 2px 8px; border-radius: 999px; border: 1px solid currentColor; }
+.pill.ok { color: var(--ok); } .pill.warn { color: var(--warn); }
+.take-top .spacer { flex: 1; }
+.take-top button { padding: 6px 10px; font-size: 13px; }
+
+.strip { position: relative; height: 14px; border-radius: 3px; background: var(--bg); border: 1px solid var(--line); display: flex; overflow: hidden; }
+.strip b { height: 100%; display: block; border-right: 1px solid var(--panel); }
+.strip .mark { position: absolute; top: -1px; bottom: -1px; width: 0; border-left: 2px dashed var(--ink); opacity: .55; }
+.scale { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 10px; color: var(--muted); margin-top: 4px; font-variant-numeric: tabular-nums; }
+
+ol.lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+ol.lines li { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 4px 14px; align-items: baseline; }
+@media (max-width: 480px) { ol.lines li { grid-template-columns: minmax(0, 1fr); } }
+.ts { font-family: var(--font-mono); font-size: 12px; font-variant-numeric: tabular-nums; color: var(--muted); display: grid; gap: 2px; }
+.ts .seg { font-weight: 600; letter-spacing: .06em; text-transform: uppercase; font-size: 10.5px; }
+.say { font-size: 17px; line-height: 1.45; margin: 0; }
+.say strong { font-weight: 600; background: var(--onair-soft); border-radius: 3px; padding: 0 2px; }
+.cue { font-size: 12px; color: var(--muted); font-style: italic; grid-column: 2; }
+@media (max-width: 480px) { .cue { grid-column: 1; } }
+.hide-cues .cue { display: none; }
+.foot { font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 14px; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 20px); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 6px; font-size: 13px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+.toast.show { opacity: 1; }
+.check { display: flex; justify-content: flex-start; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; }
+@media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <span class="tally">ON AIR</span>
+    <h1>Racik Naskah VO</h1>
+    <p class="lede">Isi masalah, solusi, nama produk, dan ajakan. Kamu langsung dapat 5 versi naskah voice over ±20 detik (maksimal 25 detik) lengkap dengan timing dan arahan baca, siap dipakai untuk konten affiliate.</p>
+  </header>
+
+  <div class="grid">
+    <form class="panel" id="f" autocomplete="off">
+      <div class="field">
+        <label for="masalah">Masalah <span class="hint">untuk hook</span></label>
+        <textarea id="masalah" rows="2" placeholder="contoh: muka kusam dan berminyak padahal udah rajin cuci muka"></textarea>
+      </div>
+      <div class="field">
+        <label for="solusi">Solusi <span class="hint">1–2 kalimat</span></label>
+        <textarea id="solusi" rows="3" placeholder="contoh: Kandungan niacinamide-nya bikin kulit lebih cerah, minyak juga lebih terkontrol."></textarea>
+      </div>
+      <div class="field">
+        <label for="produk">Nama produk</label>
+        <input type="text" id="produk" placeholder="contoh: Glowy Serum Niacinamide 10%">
+      </div>
+      <div class="field">
+        <label for="cta">Ajakan / CTA</label>
+        <input type="text" id="cta" placeholder="contoh: klik keranjang kuning sekarang">
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="durasi">Target <span class="dur-val" id="durasiVal">20 dtk</span></label>
+          <input type="range" id="durasi" min="15" max="25" step="1" value="20">
+        </div>
+        <div class="field">
+          <label for="tempo">Tempo baca</label>
+          <select id="tempo">
+            <option value="5.2">Santai</option>
+            <option value="5.8" selected>Normal</option>
+            <option value="6.5">Cepat (TTS)</option>
+          </select>
+        </div>
+      </div>
+      <label class="check" for="cues"><input type="checkbox" id="cues" checked> Tampilkan arahan baca</label>
+      <div class="actions">
+        <button type="submit" class="primary">Racik naskah</button>
+        <button type="button" id="acak" title="Pakai variasi kalimat lain">Acak ulang</button>
+      </div>
+      <p class="note" id="sample-note">Form terisi contoh. Ganti dengan produkmu, lalu tekan Racik naskah.</p>
+    </form>
+
+    <section class="takes" id="out" aria-live="polite">
+      <div class="takes-head">
+        <h2>Hasil naskah</h2>
+        <div class="legend">
+          <span><i style="background:var(--seg-hook)"></i>Hook</span>
+          <span><i style="background:var(--seg-agit)"></i>Masalah</span>
+          <span><i style="background:var(--seg-sol)"></i>Solusi</span>
+          <span><i style="background:var(--seg-ben)"></i>Benefit</span>
+          <span><i style="background:var(--seg-cta)"></i>CTA</span>
+          <span><i style="background:var(--seg-urg)"></i>Urgensi</span>
+        </div>
+      </div>
+      <div id="list" class="takes"></div>
+    </section>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const HARD_MAX = 25;
+
+  const SAMPLE = {
+    masalah: "muka kusam dan berminyak padahal udah rajin cuci muka",
+    solusi: "Kandungan niacinamide-nya bikin kulit kelihatan lebih cerah, minyak juga lebih terkontrol seharian.",
+    produk: "Glowy Serum Niacinamide 10%",
+    cta: "klik keranjang kuning sekarang"
+  };
+
+  const SEG = {
+    hook:  { label: "Hook",    color: "var(--seg-hook)" },
+    agit:  { label: "Masalah", color: "var(--seg-agit)" },
+    sol:   { label: "Solusi",  color: "var(--seg-sol)" },
+    ben:   { label: "Benefit", color: "var(--seg-ben)" },
+    cta:   { label: "CTA",     color: "var(--seg-cta)" },
+    urg:   { label: "Urgensi", color: "var(--seg-urg)" }
+  };
+
+  // {m} masalah, {s} solusi, {p} produk, {c} cta (huruf kecil), {C} cta (kapital awal)
+  // opt: segmen opsional yang ditambahkan kalau durasi masih muat, sesuai urutan prioritas
+  const STYLES = [
+    {
+      name: "Pertanyaan Relate",
+      segs: [
+        { k: "hook", t: ["Kamu juga lagi pusing sama {m}?", "Siapa di sini yang masih struggling sama {m}?", "Pernah nggak sih kesel banget gara-gara {m}?"], cue: "Nada naik di akhir, tempo cepat, tekan kata masalahnya." },
+        { k: "agit", opt: 1, t: ["Udah coba macem-macem, tapi hasilnya gitu-gitu aja.", "Rasanya udah capek nyoba, tapi tetep nggak ada perubahan."], cue: "Sedikit turun, nada empati." },
+        { k: "sol", t: ["Nah, coba deh {p}. {s}", "Tenang, sekarang ada {p}. {s}"], cue: "Ceria, sebut nama produk pelan dan jelas." },
+        { k: "ben", opt: 2, t: ["Praktis, gampang dipakai, dan hasilnya beneran kerasa.", "Pantesan aja banyak yang repeat order."], cue: "Yakin, sambil senyum." },
+        { k: "cta", t: ["{C}!", "Langsung aja, {c}!"], cue: "Energi paling tinggi, tegas." },
+        { k: "urg", opt: 3, t: ["Mumpung masih promo!", "Sebelum stoknya habis lagi!"], cue: "Cepat dan mendesak." }
+      ]
+    },
+    {
+      name: "Stop Scroll",
+      segs: [
+        { k: "hook", t: ["Stop! Jangan scroll dulu kalau kamu masih ngalamin {m}.", "Tunggu! Ini khusus buat kamu yang punya masalah {m}."], cue: "Kata pertama dihentak keras, lalu jeda sepersekian detik." },
+        { k: "agit", opt: 2, t: ["Karena bisa jadi selama ini kamu salah pilih solusi.", "Masalah kayak gini jangan dibiarin terus."], cue: "Serius, sedikit pelan." },
+        { k: "sol", t: ["Kamu cuma butuh {p}. {s}", "Jawabannya ada di {p}. {s}"], cue: "Mantap, sebut nama produk dengan jelas." },
+        { k: "ben", opt: 3, t: ["Simpel, nggak ribet, dan cocok buat dipakai tiap hari.", "Sekali coba, kamu bakal ngerti kenapa ini viral."], cue: "Meyakinkan." },
+        { k: "cta", t: ["{C}!", "Jadi tunggu apa lagi? {C}!"], cue: "Tegas, energi naik." },
+        { k: "urg", opt: 1, t: ["Harganya lagi turun, jangan sampai kehabisan!", "Promonya nggak lama, buruan!"], cue: "Cepat dan mendesak." }
+      ]
+    },
+    {
+      name: "Curhat / POV",
+      segs: [
+        { k: "hook", t: ["Jujur, dulu aku hampir nyerah sama {m}.", "POV: kamu udah capek banget sama {m}."], cue: "Suara curhat, akrab, seperti ngobrol ke teman." },
+        { k: "agit", opt: 1, t: ["Mau ngapa-ngapain jadi nggak tenang, serba salah.", "Udah gonta-ganti produk, tetep aja nggak ngaruh."], cue: "Pelan, sedikit mengeluh." },
+        { k: "sol", t: ["Sampai akhirnya aku nemu {p}. {s}", "Terus temenku nyaranin {p}. {s}"], cue: "Nada berubah jadi lega dan antusias." },
+        { k: "ben", opt: 2, t: ["Sekarang? Beda banget rasanya.", "Nyesel kenapa nggak dari dulu."], cue: "Senyum, puas." },
+        { k: "cta", t: ["Kamu juga harus coba. {C}!", "Yang punya masalah sama, {c}!"], cue: "Hangat tapi tegas." },
+        { k: "urg", opt: 3, t: ["Mumpung lagi diskon!", "Mumpung harganya masih miring!"], cue: "Ringan, cepat." }
+      ]
+    },
+    {
+      name: "Fakta Mengejutkan",
+      segs: [
+        { k: "hook", t: ["Banyak yang belum tahu, {m} itu sebenarnya bisa diatasi dengan cara simpel.", "Kenapa sih {m}? Ternyata jawabannya simpel banget."], cue: "Nada bocorin rahasia, tekan kata 'ternyata' atau 'belum tahu'." },
+        { k: "agit", opt: 1, t: ["Kebanyakan orang cuma fokus ke cara yang salah.", "Masalahnya, banyak yang salah langkah dari awal."], cue: "Serius, meyakinkan." },
+        { k: "sol", t: ["Kuncinya ada di {p}. {s}", "Caranya? Pakai {p}. {s}"], cue: "Mantap, nama produk diberi penekanan." },
+        { k: "ben", opt: 2, t: ["Udah banyak yang buktiin sendiri hasilnya.", "Makanya rating-nya tinggi banget."], cue: "Yakin." },
+        { k: "cta", t: ["Mau buktiin juga? {C}!", "{C}!"], cue: "Energi naik di akhir." },
+        { k: "urg", opt: 3, t: ["Selagi masih promo!", "Stoknya cepet banget habis!"], cue: "Cepat." }
+      ]
+    },
+    {
+      name: "Promo Langsung",
+      segs: [
+        { k: "hook", t: ["Buat kamu yang lagi cari solusi {m}, ini lagi promo!", "Lagi bingung ngatasin {m}? Pas banget, ini lagi diskon!"], cue: "Energi tinggi dari awal, gaya host live." },
+        { k: "sol", t: ["Namanya {p}. {s}", "Kenalin, {p}. {s}"], cue: "Jelas, ceria, nama produk dipisah tiap kata." },
+        { k: "ben", opt: 1, t: ["Kualitasnya oke, harganya ramah di kantong.", "Udah terjual ribuan, review-nya bagus-bagus."], cue: "Semangat, meyakinkan." },
+        { k: "agit", opt: 3, t: ["Nggak perlu lagi pusing sama masalah yang sama.", "Jadi nggak perlu buang uang buat coba-coba lagi."], cue: "Ringan." },
+        { k: "cta", t: ["{C}!", "Langsung aja {c}!"], cue: "Paling keras, tegas." },
+        { k: "urg", opt: 2, t: ["Promonya cuma hari ini!", "Sebelum harganya balik normal!"], cue: "Cepat dan mendesak." }
+      ]
+    }
+  ];
+
+  // ---------- text helpers ----------
+  const clean = (s) => (s || "").replace(/\s+/g, " ").trim();
+  const capFirst = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+  const lowFirst = (s) => (s && !/^.[A-Z0-9]/.test(s)) ? s.charAt(0).toLowerCase() + s.slice(1) : s;
+  const stripEnd = (s) => s.replace(/[.!?,;:\s]+$/, "");
+  const endSentence = (s) => /[.!?]$/.test(s) ? s : s + ".";
+  const esc = (s) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  function prep(raw) {
+    let m = lowFirst(stripEnd(clean(raw.masalah))).replace(/^(masalah|problem)\s+/i, "");
+    let s = endSentence(capFirst(clean(raw.solusi)));
+    let p = stripEnd(clean(raw.produk));
+    let c = stripEnd(clean(raw.cta)) || "klik keranjang kuning sekarang";
+    return { m, s, p, c: lowFirst(c), C: capFirst(c) };
+  }
+
+  function fill(tpl, v) {
+    return tpl.replace(/\{(m|s|p|c|C)\}/g, (_, k) => v[k]);
+  }
+
+  // ---------- duration estimate (Bahasa Indonesia ~ suku kata per detik) ----------
+  function syllables(text) {
+    let t = text.toLowerCase().replace(/\d+%?/g, (d) => " " + "du ".repeat(Math.max(1, d.length) + (d.endsWith("%") ? 2 : 0)) + " ");
+    let total = 0;
+    for (const w of t.split(/[^a-zà-ÿ]+/)) {
+      if (!w) continue;
+      let n = (w.match(/[aiueo]/g) || []).length;
+      n -= (w.match(/(ai|au|oi)(?![aiueo])(?=[^aiueo]*$)/g) || []).length; // diftong di suku akhir: pakai, kalau
+      if (n < 1) n = 1;
+      total += n;
+    }
+    return total;
+  }
+  function seconds(text, rate) {
+    const pauses = (text.match(/[.!?]/g) || []).length * 0.35 + (text.match(/[,:]/g) || []).length * 0.15;
+    return syllables(text) / rate + pauses;
+  }
+
+  // ---------- build one take ----------
+  function buildTake(style, v, target, rate, seed, idx) {
+    const pick = (arr, j) => arr[(seed + idx + j) % arr.length];
+    const all = style.segs.map((sg, j) => {
+      const text = fill(pick(sg.t, j), v);
+      return { ...sg, text, dur: seconds(text, rate) };
+    });
+    const chosen = new Set(all.filter((s) => !s.opt));
+    let total = [...chosen].reduce((a, s) => a + s.dur, 0);
+    const optional = all.filter((s) => s.opt).sort((a, b) => a.opt - b.opt);
+    for (const s of optional) {
+      if (total + s.dur <= target + 1 && total + s.dur <= HARD_MAX) { chosen.add(s); total += s.dur; }
+    }
+    const lines = all.filter((s) => chosen.has(s));
+    let t = 0;
+    for (const l of lines) { l.start = t; t += l.dur; l.end = t; }
+    const words = lines.reduce((a, l) => a + l.text.split(/\s+/).length, 0);
+    return { name: style.name, lines, total: t, words };
+  }
+
+  // ---------- render ----------
+  function fmt(x) { return x.toFixed(1).replace(".", ","); }
+  function highlight(text, p) {
+    const e = esc(text);
+    if (!p) return e;
+    const ep = esc(p);
+    return e.split(ep).join("<strong>" + ep + "</strong>");
+  }
+
+  function status(total, target) {
+    if (total > HARD_MAX) return { cls: "warn", txt: "±" + fmt(total) + " dtk · terlalu panjang" };
+    if (total < target - 4) return { cls: "warn", txt: "±" + fmt(total) + " dtk · agak pendek" };
+    return { cls: "ok", txt: "±" + fmt(total) + " dtk" };
+  }
+
+  let takes = [];
+  function render(raw, target, rate, seed) {
+    const v = prep(raw);
+    const list = $("list");
+    if (!v.m || !v.p || !clean(raw.solusi)) {
+      list.innerHTML = '<article class="take"><p class="say">Isi Masalah, Solusi, dan Nama produk dulu, lalu tekan <b>Racik naskah</b>.</p></article>';
+      takes = [];
+      return;
+    }
+    takes = STYLES.map((st, i) => buildTake(st, v, target, rate, seed, i));
+    list.innerHTML = takes.map((tk, i) => {
+      const st = status(tk.total, target);
+      const scaleMax = Math.max(HARD_MAX, tk.total);
+      const bars = tk.lines.map((l) => `<b style="width:${(l.dur / scaleMax * 100).toFixed(2)}%;background:${SEG[l.k].color}" title="${SEG[l.k].label} ${fmt(l.dur)} dtk"></b>`).join("");
+      const lines = tk.lines.map((l) => `
+        <li>
+          <span class="ts"><span class="seg" style="color:${SEG[l.k].color}">${SEG[l.k].label}</span>${fmt(l.start)}–${fmt(l.end)}s</span>
+          <p class="say">${highlight(l.text, v.p)}</p>
+          <span class="cue">${esc(l.cue)}</span>
+        </li>`).join("");
+      let warn = "";
+      if (tk.total > HARD_MAX) warn = '<p class="note">Lewat 25 detik. Persingkat kalimat Solusi atau Masalah supaya pas.</p>';
+      else if (tk.total < target - 4) warn = '<p class="note">Masih di bawah target. Tambahkan detail manfaat di kolom Solusi supaya lebih padat.</p>';
+      return `
+      <article class="take">
+        <div class="take-top">
+          <span class="take-no">TAKE ${i + 1}</span>
+          <h3 class="take-name">${esc(tk.name)}</h3>
+          <span class="pill ${st.cls}">${st.txt}</span>
+          <span class="spacer"></span>
+          <button type="button" data-copy="${i}">Salin naskah</button>
+        </div>
+        <div>
+          <div class="strip">${bars}<span class="mark" style="left:${(target / scaleMax * 100).toFixed(2)}%" title="Target ${target} dtk"></span></div>
+          <div class="scale"><span>0s</span><span>target ${target}s</span><span>${scaleMax > HARD_MAX ? fmt(scaleMax) : HARD_MAX}s</span></div>
+        </div>
+        <ol class="lines">${lines}</ol>
+        ${warn}
+        <div class="foot"><span>${tk.words} kata</span><span>${tk.lines.length} bagian</span></div>
+      </article>`;
+    }).join("");
+  }
+
+  // ---------- state ----------
+  const KEY = "racik-vo-v1";
+  let seed = 0;
+  function read() {
+    return { masalah: $("masalah").value, solusi: $("solusi").value, produk: $("produk").value, cta: $("cta").value };
+  }
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify({ ...read(), durasi: $("durasi").value, tempo: $("tempo").value, cues: $("cues").checked })); } catch (e) {}
+  }
+  function load() {
+    let d = null;
+    try { d = JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) {}
+    const src = d && (d.masalah || d.produk) ? d : SAMPLE;
+    $("masalah").value = src.masalah || ""; $("solusi").value = src.solusi || "";
+    $("produk").value = src.produk || ""; $("cta").value = src.cta || "";
+    if (d) {
+      if (d.durasi) $("durasi").value = d.durasi;
+      if (d.tempo) $("tempo").value = d.tempo;
+      if (typeof d.cues === "boolean") $("cues").checked = d.cues;
+    }
+    $("sample-note").hidden = src !== SAMPLE;
+  }
+  function run() {
+    $("durasiVal").textContent = $("durasi").value + " dtk";
+    $("out").classList.toggle("hide-cues", !$("cues").checked);
+    render(read(), +$("durasi").value, +$("tempo").value, seed);
+    save();
+  }
+
+  function toast(msg) {
+    const t = $("toast"); t.textContent = msg; t.classList.add("show");
+    clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("show"), 1600);
+  }
+
+  $("f").addEventListener("submit", (e) => { e.preventDefault(); $("sample-note").hidden = true; run(); });
+  $("acak").addEventListener("click", () => { seed++; run(); toast("Variasi kalimat diganti"); });
+  ["durasi", "tempo", "cues"].forEach((id) => $(id).addEventListener("input", run));
+  $("list").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-copy]");
+    if (!b) return;
+    const tk = takes[+b.dataset.copy];
+    const text = tk.lines.map((l) => l.text).join(" ");
+    const fallback = () => {
+      const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); toast("Naskah disalin"); } catch (err) { toast("Gagal menyalin, blok teksnya manual"); }
+      ta.remove();
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => toast("Naskah disalin"), fallback);
+    } else fallback();
+  });
+
+  load();
+  run();
+})();
+</script>
+</body>
+</html>
