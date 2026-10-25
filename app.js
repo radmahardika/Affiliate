@@ -293,6 +293,7 @@ $('btn-faster').onclick = () => {
 let facing = 'user';
 let videoTrack = null;
 let audioTrack = null;
+const AUDIO = { echoCancellation: true, noiseSuppression: true };
 let switching = false;
 let wakeLock = null;
 
@@ -308,12 +309,11 @@ function showMessage(text) {
   el.classList.toggle('hidden', !text);
 }
 
-async function startCamera(withAudio) {
-  const stream = await navigator.mediaDevices.getUserMedia({
-    video: videoConstraints(),
-    audio: withAudio ? { echoCancellation: true, noiseSuppression: true } : false,
-  });
-  if (withAudio) audioTrack = stream.getAudioTracks()[0] || null;
+// Mikrofon selalu diminta ulang bersama kamera: di iPhone, meminta kamera lagi
+// bisa membuat track mikrofon yang lama ikut mati/bisu.
+async function startCamera() {
+  const stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints(), audio: AUDIO });
+  replaceAudio(stream.getAudioTracks()[0] || null);
   videoTrack = stream.getVideoTracks()[0];
   const cam = $('cam');
   cam.srcObject = new MediaStream([videoTrack]);
@@ -321,9 +321,26 @@ async function startCamera(withAudio) {
   cam.classList.toggle('mirror', facing === 'user');
 }
 
+function replaceAudio(track) {
+  if (audioTrack && audioTrack !== track) audioTrack.stop();
+  audioTrack = track;
+  connectMic();
+}
+
+async function ensureAudio() {
+  if (audioTrack && audioTrack.readyState === 'live' && !audioTrack.muted) return;
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: AUDIO });
+    replaceAudio(stream.getAudioTracks()[0] || null);
+  } catch (e) {
+    // Tetap merekam tanpa suara; layar hasil akan memberi peringatan.
+  }
+}
+
 function stopCamera() {
   [videoTrack, audioTrack].forEach((t) => t && t.stop());
   videoTrack = audioTrack = null;
+  connectMic();
   $('cam').srcObject = null;
 }
 
@@ -342,19 +359,23 @@ async function flipCamera() {
     // iPhone hanya bisa membuka satu kamera sekaligus, jadi kamera lama dimatikan dulu.
     // Di mode satu file, kanvas menahan frame terakhir selama jeda singkat ini.
     if (videoTrack) videoTrack.stop();
-    await startCamera(false);
+    await startCamera();
   } catch (e) {
     facing = previous;
     try {
-      await startCamera(false);
+      await startCamera();
     } catch (e2) {
       showMessage('Kamera tidak bisa dibuka: ' + e2.message);
     }
   } finally {
     switching = false;
     if (recording) {
-      if (split) startRecorder();
-      else scheduleDraw();
+      if (split) {
+        await ensureAudio();
+        startRecorder();
+      } else {
+        scheduleDraw();
+      }
     }
     $('btn-flip').disabled = false;
     $('btn-shutter').disabled = false;
@@ -385,7 +406,7 @@ async function openRecorder() {
     return;
   }
   try {
-    await startCamera(true);
+    await startCamera();
     requestWakeLock();
   } catch (e) {
     showMessage('Izin kamera/mikrofon ditolak. Buka Pengaturan iPhone → Safari → Kamera & Mikrofon → Izinkan, lalu coba lagi.');
@@ -460,6 +481,37 @@ function scheduleDraw(gen) {
   else requestAnimationFrame(() => drawFrame(gen));
 }
 
+// Mode satu file memakai satu perekam sepanjang sesi, jadi suaranya dialirkan lewat
+// Web Audio agar mikrofon baru setelah ganti kamera bisa disambungkan tanpa memutus rekaman.
+let audioCtx = null;
+let audioDest = null;
+let audioSrc = null;
+
+function prepareAudioMixer() {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return;
+  if (!audioCtx) {
+    audioCtx = new AC();
+    audioDest = audioCtx.createMediaStreamDestination();
+  }
+  // Harus dipanggil langsung dari ketukan agar iPhone mengizinkan audio berjalan.
+  audioCtx.resume().catch(() => {});
+}
+
+function connectMic() {
+  if (audioSrc) audioSrc.disconnect();
+  audioSrc = null;
+  if (!audioCtx || !audioTrack) return;
+  audioSrc = audioCtx.createMediaStreamSource(new MediaStream([audioTrack]));
+  audioSrc.connect(audioDest);
+}
+
+function mixedAudioTrack() {
+  if (!audioDest) return audioTrack;
+  connectMic();
+  return audioDest.stream.getAudioTracks()[0];
+}
+
 function startRecorder() {
   const tracks = [];
   if (canvasMode()) {
@@ -473,7 +525,8 @@ function startRecorder() {
   } else {
     tracks.push(videoTrack);
   }
-  if (audioTrack) tracks.push(audioTrack);
+  const audio = canvasMode() ? mixedAudioTrack() : audioTrack;
+  if (audio) tracks.push(audio);
 
   const mimeType = pickMimeType();
   const rec = new MediaRecorder(new MediaStream(tracks), {
@@ -543,8 +596,10 @@ async function startSession() {
   }
   starting = true;
   $('btn-shutter').disabled = true;
+  if (canvasMode()) prepareAudioMixer();
   setScrolling(false);
   await countdown();
+  await ensureAudio();
   starting = false;
   $('btn-shutter').disabled = false;
 
@@ -594,6 +649,11 @@ function playClip(index) {
   const pb = $('playback');
   if (pb.src) URL.revokeObjectURL(pb.src);
   pb.src = URL.createObjectURL(clips[index]);
+  $('no-audio').classList.add('hidden');
+  pb.onloadedmetadata = () => {
+    // Safari bisa melaporkan jumlah track suara; browser lain dilewati.
+    if (pb.audioTracks && pb.audioTracks.length === 0) $('no-audio').classList.remove('hidden');
+  };
   $('clip-tabs').querySelectorAll('button').forEach((b, i) => b.classList.toggle('primary', i === index));
 }
 

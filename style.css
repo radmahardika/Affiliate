@@ -283,6 +283,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 #playback { flex: 1; min-height: 0; width: 100%; background: #000; }
 .clip-tabs { display: flex; gap: 8px; padding: 12px 16px 0; overflow-x: auto; }
+.warn { color: #ffd60a; }
 .note { color: var(--muted); font-size: 12px; }
 .review-actions { display: flex; gap: 12px; padding: 12px 16px 0; }
 .review-actions .btn { flex: 1; padding: 14px; }
