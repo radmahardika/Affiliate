@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Prompter">
+  <meta name="theme-color" content="#111111">
+  <title>Prompter Affiliate</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Daftar naskah -->
+  <section id="view-library" class="view active">
+    <header class="bar">
+      <h1>Naskah</h1>
+      <button id="btn-new" class="btn primary">+ Baru</button>
+    </header>
+    <ul id="script-list" class="list"></ul>
+    <p id="empty-hint" class="hint">Belum ada naskah. Ketuk <b>+ Baru</b> untuk mulai.</p>
+  </section>
+
+  <!-- Editor naskah -->
+  <section id="view-editor" class="view">
+    <header class="bar">
+      <button id="btn-editor-back" class="btn ghost">‹ Kembali</button>
+      <button id="btn-delete" class="btn ghost danger">Hapus</button>
+    </header>
+    <div class="editor">
+      <input id="edit-title" class="input" placeholder="Judul / nama produk" maxlength="80">
+      <textarea id="edit-body" class="input textarea" placeholder="Tulis naskah di sini…&#10;&#10;Tips: [tunjukkan produk] tampil sebagai penanda aksi, *kata* untuk penekanan."></textarea>
+      <div class="editor-meta">
+        <span id="edit-stats">0 kata · ±0 detik</span>
+        <button id="btn-template" class="btn small">Pakai template</button>
+      </div>
+      <button id="btn-record" class="btn primary big">🎥 Mulai Rekam</button>
+    </div>
+  </section>
+
+  <!-- Perekam -->
+  <section id="view-recorder" class="view recorder">
+    <video id="cam" playsinline muted autoplay></video>
+
+    <div id="prompter" class="prompter">
+      <div id="prompter-text" class="prompter-text"></div>
+      <div class="reading-line"></div>
+    </div>
+
+    <div id="countdown" class="countdown hidden">3</div>
+
+    <div class="rec-top">
+      <button id="btn-rec-close" class="icon-btn" aria-label="Tutup">✕</button>
+      <div id="rec-timer" class="rec-timer hidden">● 00:00</div>
+      <button id="btn-settings" class="icon-btn" aria-label="Pengaturan">⚙︎</button>
+    </div>
+
+    <div class="rec-bottom">
+      <div class="speed-row">
+        <button id="btn-slower" class="icon-btn small" aria-label="Lebih lambat">−</button>
+        <span id="speed-label">Kecepatan 4</span>
+        <button id="btn-faster" class="icon-btn small" aria-label="Lebih cepat">+</button>
+        <button id="btn-rewind" class="icon-btn small" aria-label="Ke awal">⤒</button>
+      </div>
+      <div class="shutter-row">
+        <button id="btn-play" class="icon-btn" aria-label="Jalankan teks">▶︎</button>
+        <button id="btn-shutter" class="shutter" aria-label="Rekam"><span></span></button>
+        <button id="btn-flip" class="icon-btn" aria-label="Ganti kamera">⟲</button>
+      </div>
+    </div>
+
+    <div id="rec-msg" class="rec-msg hidden"></div>
+
+    <!-- Panel pengaturan -->
+    <div id="settings" class="sheet hidden">
+      <div class="sheet-body">
+        <h2>Pengaturan</h2>
+        <label class="row">Ukuran huruf
+          <input id="set-font" type="range" min="18" max="56" step="2">
+        </label>
+        <label class="row">Tinggi area teks
+          <input id="set-height" type="range" min="25" max="70" step="5">
+        </label>
+        <label class="row">Latar teks gelap
+          <input id="set-shade" type="range" min="0" max="90" step="10">
+        </label>
+        <label class="row check">Hitung mundur 3-2-1
+          <input id="set-countdown" type="checkbox">
+        </label>
+        <label class="row check">Cerminkan hasil kamera depan
+          <input id="set-mirror" type="checkbox">
+        </label>
+        <label class="row">Kualitas video
+          <select id="set-quality">
+            <option value="720">720p (lebih ringan)</option>
+            <option value="1080">1080p (lebih tajam)</option>
+          </select>
+        </label>
+        <button id="btn-settings-done" class="btn primary">Selesai</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Hasil rekaman -->
+  <section id="view-review" class="view review">
+    <video id="playback" playsinline controls></video>
+    <div class="review-actions">
+      <button id="btn-retake" class="btn">↺ Rekam ulang</button>
+      <button id="btn-save" class="btn primary">⬇︎ Simpan video</button>
+    </div>
+    <p class="hint small">Di iPhone: ketuk <b>Simpan video</b> → pilih <b>Simpan Video</b> agar masuk ke galeri Foto.</p>
+  </section>
+
+  <script src="app.js"></script>
+</body>
+</html>
