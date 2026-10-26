@@ -74,7 +74,9 @@ function renderScript(text) {
       const html = escapeHtml(para.trim())
         .replace(/\[([^\]\n]+)\]/g, '<span class="cue">[$1]</span>')
         .replace(/\*([^*\n]+)\*/g, '<em>$1</em>')
-        .replace(/\n/g, '<br>');
+        .replace(/\n/g, '<br>')
+        // Penanda sudah tampil di baris sendiri, jadi baris baru setelahnya tidak perlu.
+        .replace(/<\/span><br>/g, '</span>');
       return `<p>${html}</p>`;
     })
     .join('');

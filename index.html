@@ -20,10 +20,52 @@
   <section id="view-library" class="view active">
     <header class="bar">
       <h1>Naskah</h1>
-      <button id="btn-new" class="btn primary">+ Baru</button>
+      <div class="bar-actions">
+        <button id="btn-generate" class="btn">✨ Buat naskah</button>
+        <button id="btn-new" class="btn primary">+ Baru</button>
+      </div>
     </header>
     <ul id="script-list" class="list"></ul>
-    <p id="empty-hint" class="hint">Belum ada naskah. Ketuk <b>+ Baru</b> untuk mulai.</p>
+    <p id="empty-hint" class="hint">Belum ada naskah. Ketuk <b>✨ Buat naskah</b> untuk dibuatkan otomatis, atau <b>+ Baru</b> untuk menulis sendiri.</p>
+  </section>
+
+  <!-- Generator naskah & hook -->
+  <section id="view-generator" class="view">
+    <header class="bar">
+      <button id="btn-gen-back" class="btn ghost">‹ Kembali</button>
+      <span id="gen-engine" class="engine-badge">Template</span>
+    </header>
+    <div class="editor">
+      <input id="gen-product" class="input" placeholder="Nama produk" maxlength="120">
+      <input id="gen-price" class="input" placeholder="Harga (contoh: 89000 atau 89rb)" maxlength="40">
+      <input id="gen-b1" class="input" placeholder="Keunggulan 1 (salin dari halaman produk)" maxlength="200">
+      <input id="gen-b2" class="input" placeholder="Keunggulan 2" maxlength="200">
+      <input id="gen-b3" class="input" placeholder="Keunggulan 3" maxlength="200">
+      <button id="btn-gen-run" class="btn primary big">✨ Buat 5 hook &amp; naskah</button>
+      <p id="gen-status" class="hint small hidden"></p>
+
+      <div id="gen-result" class="hidden">
+        <h2 class="section-title">1. Pilih hook</h2>
+        <div id="gen-hooks" class="hook-list"></div>
+
+        <h2 class="section-title">2. Naskah <span id="gen-stats" class="muted"></span></h2>
+        <div id="gen-script" class="gen-script"></div>
+
+        <h2 class="section-title">3. Daftar shot</h2>
+        <ol id="gen-shots" class="shot-list"></ol>
+
+        <div class="gen-actions">
+          <button id="btn-gen-again" class="btn">↻ Buat ulang</button>
+          <button id="btn-gen-send" class="btn primary">🎥 Kirim ke prompter</button>
+        </div>
+      </div>
+
+      <details class="ai-settings">
+        <summary>Pengaturan AI (opsional)</summary>
+        <p class="hint small left">Masukkan API key Anthropic agar naskah dibuat oleh Claude dan hasilnya lebih natural. Tanpa API key, naskah dibuat dari template. Key hanya disimpan di HP ini.</p>
+        <input id="gen-apikey" class="input" type="password" placeholder="sk-ant-…" autocomplete="off" autocapitalize="off" spellcheck="false">
+      </details>
+    </div>
   </section>
 
   <!-- Editor naskah -->
@@ -130,5 +172,6 @@
   </section>
 
   <script src="app.js"></script>
+  <script src="generator.js"></script>
 </body>
 </html>

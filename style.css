@@ -133,6 +133,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 .prompter-text p { margin: 0 0 0.8em; }
 .prompter-text .cue {
+  display: block;
+  line-height: 1.3;
+  margin-bottom: 0.15em;
   color: var(--cue);
   font-size: 0.6em;
   font-weight: 600;
@@ -287,3 +290,41 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .note { color: var(--muted); font-size: 12px; }
 .review-actions { display: flex; gap: 12px; padding: 12px 16px 0; }
 .review-actions .btn { flex: 1; padding: 14px; }
+
+/* ---------- Generator ---------- */
+.bar-actions { display: flex; gap: 8px; }
+.engine-badge { font-size: 13px; color: var(--muted); border: 1px solid var(--line); border-radius: 99px; padding: 4px 10px; }
+.engine-badge.ai { color: #fff; background: #5e5ce6; border-color: #5e5ce6; }
+.section-title { font-size: 16px; margin: 20px 0 8px; }
+.muted { color: var(--muted); font-weight: 400; font-size: 13px; }
+.hook-list { display: flex; flex-direction: column; gap: 8px; }
+.hook {
+  text-align: left;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 16px;
+  line-height: 1.4;
+}
+.hook.selected { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.gen-script {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+.gen-script p { margin: 0 0 10px; }
+.gen-script p:last-child { margin: 0; }
+.gen-script .cue { color: var(--cue); font-size: 13px; font-weight: 600; display: block; }
+.gen-script em { font-style: normal; color: var(--cue); }
+.shot-list { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; font-size: 15px; line-height: 1.4; }
+.shot-list b { color: var(--cue); }
+.gen-actions { display: flex; gap: 12px; margin-top: 20px; }
+.gen-actions .btn { flex: 1; padding: 14px; }
+.ai-settings { margin-top: 12px; color: var(--muted); }
+.ai-settings summary { padding: 8px 0; cursor: pointer; }
+.ai-settings .input { margin-top: 4px; }
+.hint.left { text-align: left; padding: 4px 0 8px; }

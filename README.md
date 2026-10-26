@@ -3,6 +3,9 @@
 Web app teleprompter untuk merekam video affiliate di iPhone. Teks naskah tampil di atas kamera, tapi tidak ikut terekam.
 
 ## Fitur
+- **Generator naskah & hook**: isi nama produk, harga, dan 3 keunggulan → 5 pilihan hook + naskah 15–20 detik (Hook → Demo → Close-up → CTA) + daftar shot, lalu langsung kirim ke prompter
+  - Tanpa API key: dibuat dari template (gratis, offline)
+  - Dengan API key Anthropic (Pengaturan AI): dibuat oleh Claude, hasil lebih natural. Key hanya disimpan di HP.
 - Simpan banyak naskah, dengan template affiliate (Hook → Masalah → Produk → Keunggulan → Harga → CTA)
 - `[penanda aksi]` tampil kuning kecil, `*kata*` untuk penekanan
 - Perkiraan durasi dari jumlah kata
