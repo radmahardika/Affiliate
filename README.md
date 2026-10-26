@@ -7,7 +7,7 @@ Web app teleprompter untuk merekam video affiliate di iPhone. Teks naskah tampil
   - Tanpa API key: dibuat dari template (gratis, offline)
   - Dengan API key Anthropic (Pengaturan AI): dibuat oleh Claude, hasil lebih natural. Key hanya disimpan di HP.
 - Simpan banyak naskah, dengan template affiliate (Hook → Masalah → Produk → Keunggulan → Harga → CTA)
-- `[penanda aksi]` tampil kuning kecil, `*kata*` untuk penekanan
+- `*kata*` untuk penekanan; `[catatan]` dalam kurung siku tidak tampil di prompter
 - Perkiraan durasi dari jumlah kata
 - Kamera + rekam video 9:16 (720p/1080p) langsung di aplikasi
 - Ganti kamera depan/belakang, juga saat sedang merekam

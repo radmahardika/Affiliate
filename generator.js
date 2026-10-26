@@ -211,13 +211,10 @@ async function describeAIError(e) {
 
 // ---------- Tampilan ----------
 
+// Naskah untuk prompter hanya berisi kalimat yang diucapkan; daftar shot
+// cukup ditampilkan di layar generator.
 function buildBody(result, hookIndex) {
-  return [
-    `[HOOK – ${result.hook_shot}]\n${result.hooks[hookIndex]}`,
-    `[DEMO – ${result.demo.shot}]\n${result.demo.text}`,
-    `[CLOSE-UP – ${result.closeup.shot}]\n${result.closeup.text}`,
-    `[CTA – ${result.cta.shot}]\n${result.cta.text}`,
-  ].join('\n\n');
+  return [result.hooks[hookIndex], result.demo.text, result.closeup.text, result.cta.text].join('\n\n');
 }
 
 // Teks VO: hanya kalimat yang diucapkan, tanpa penanda shot dan tanda bintang.

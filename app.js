@@ -66,17 +66,19 @@ function escapeHtml(s) {
   return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
+// Catatan dalam [kurung siku] hanya untuk penulis naskah dan tidak ditampilkan.
 function renderScript(text) {
   return text
+    .replace(/^[ \t]*\[[^\]\n]*\][ \t]*(\n|$)/gm, '')
+    .replace(/[ \t]*\[[^\]\n]*\]/g, '')
     .trim()
     .split(/\n\s*\n/)
+    .map((para) => para.trim())
+    .filter(Boolean)
     .map((para) => {
-      const html = escapeHtml(para.trim())
-        .replace(/\[([^\]\n]+)\]/g, '<span class="cue">[$1]</span>')
+      const html = escapeHtml(para)
         .replace(/\*([^*\n]+)\*/g, '<em>$1</em>')
-        .replace(/\n/g, '<br>')
-        // Penanda sudah tampil di baris sendiri, jadi baris baru setelahnya tidak perlu.
-        .replace(/<\/span><br>/g, '</span>');
+        .replace(/\n/g, '<br>');
       return `<p>${html}</p>`;
     })
     .join('');

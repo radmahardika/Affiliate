@@ -132,15 +132,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
   will-change: transform;
 }
 .prompter-text p { margin: 0 0 0.8em; }
-.prompter-text .cue {
-  display: block;
-  line-height: 1.3;
-  margin-bottom: 0.15em;
-  color: var(--cue);
-  font-size: 0.6em;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
 .prompter-text em { font-style: normal; color: var(--cue); }
 .reading-line {
   position: absolute;
@@ -318,10 +309,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 .gen-script p { margin: 0 0 10px; }
 .gen-script p:last-child { margin: 0; }
-.gen-script .cue { color: var(--cue); font-size: 13px; font-weight: 600; display: block; }
 .gen-script em { font-style: normal; color: var(--cue); }
 .shot-list { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; font-size: 15px; line-height: 1.4; }
-.shot-list b { color: var(--cue); }
+.shot-list b { color: var(--text); }
 .gen-actions { display: flex; gap: 12px; margin-top: 20px; }
 .gen-actions .btn { flex: 1; padding: 14px; }
 .ai-settings { margin-top: 12px; color: var(--muted); }
