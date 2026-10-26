@@ -114,9 +114,11 @@ function renderLibrary() {
           <div class="title">${escapeHtml(s.title || 'Tanpa judul')}</div>
           <div class="meta">${formatStats(s.body)}</div>
         </div>
-        <button class="btn small primary">🎥 Rekam</button>`;
+        <button class="btn small ghost danger btn-del" aria-label="Hapus naskah">🗑</button>
+        <button class="btn small primary btn-rec">🎥 Rekam</button>`;
       li.querySelector('.info').onclick = () => openEditor(s.id);
-      li.querySelector('button').onclick = () => {
+      li.querySelector('.btn-del').onclick = () => deleteScript(s.id);
+      li.querySelector('.btn-rec').onclick = () => {
         currentId = s.id;
         openRecorder();
       };
@@ -173,12 +175,15 @@ $('btn-template').onclick = () => {
   body.value = TEMPLATE;
   body.oninput();
 };
-$('btn-delete').onclick = () => {
-  if (!confirm('Hapus naskah ini?')) return;
-  scripts = scripts.filter((s) => s.id !== currentId);
+function deleteScript(id) {
+  const s = scripts.find((x) => x.id === id);
+  if (!s || !confirm(`Hapus naskah "${s.title || 'Tanpa judul'}"?`)) return;
+  scripts = scripts.filter((x) => x.id !== id);
   save(STORE_SCRIPTS, scripts);
   renderLibrary();
-};
+}
+
+$('btn-delete').onclick = () => deleteScript(currentId);
 $('btn-record').onclick = () => {
   saveEditor();
   openRecorder();

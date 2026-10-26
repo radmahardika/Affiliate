@@ -220,6 +220,42 @@ function buildBody(result, hookIndex) {
   ].join('\n\n');
 }
 
+// Teks VO: hanya kalimat yang diucapkan, tanpa penanda shot dan tanda bintang.
+function voText(result, hookIndex) {
+  return [result.hooks[hookIndex], result.demo.text, result.closeup.text, result.cta.text]
+    .map((t) => t.replace(/\[[^\]]*\]/g, '').replace(/\*/g, '').replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+    .join('\n\n');
+}
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch (e) {
+    // Cadangan untuk browser yang menolak Clipboard API.
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    ta.setSelectionRange(0, text.length);
+    const ok = document.execCommand('copy');
+    ta.remove();
+    return ok;
+  }
+}
+
+async function copyVO() {
+  if (!genResult) return;
+  const btn = $('btn-gen-copy');
+  const ok = await copyText(voText(genResult, selectedHook));
+  btn.textContent = ok ? '✓ Tersalin' : 'Gagal menyalin';
+  setTimeout(() => (btn.textContent = '📋 Salin teks VO'), 2000);
+}
+
 function renderResult() {
   const hooks = $('gen-hooks');
   hooks.innerHTML = '';
@@ -340,6 +376,7 @@ $('btn-gen-back').onclick = () => {
 $('btn-gen-run').onclick = runGenerator;
 $('btn-gen-again').onclick = runGenerator;
 $('btn-gen-send').onclick = sendToPrompter;
+$('btn-gen-copy').onclick = copyVO;
 $('gen-apikey').oninput = () => {
   save(STORE_APIKEY, apiKey());
   updateEngineBadge();
