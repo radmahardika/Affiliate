@@ -8,7 +8,8 @@ const STORE_APIKEY = 'prompter.apiKey';
 
 // Versi SDK dipatok agar perilakunya tidak berubah tiba-tiba.
 const SDK_URL = 'https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@0.133.0/+esm';
-const MODEL = 'claude-opus-5-5';
+// Haiku: cepat dan murah, cukup untuk naskah pendek.
+const MODEL = 'claude-haiku-5-5';
 
 let genResult = null;
 let selectedHook = 0;
@@ -167,11 +168,9 @@ async function generateWithAI(input, apiKey) {
   if (input.price) lines.push(`Harga: ${input.price}`);
   input.benefits.forEach((b, i) => lines.push(`Keunggulan ${i + 1}: ${b}`));
 
-  const response = await client.beta.messages.create({
+  const response = await client.messages.create({
     model: MODEL,
     max_tokens: 16000,
-    betas: ['server-side-fallback-2026-07-01'],
-    fallbacks: 'default',
     output_config: {
       effort: 'medium',
       format: { type: 'json_schema', schema: SCRIPT_SCHEMA },
