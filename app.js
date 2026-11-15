@@ -669,8 +669,10 @@ function startRecorder() {
   const mimeType = pickMimeType();
   const rec = new MediaRecorder(new MediaStream(tracks), {
     mimeType: mimeType || undefined,
-    videoBitsPerSecond: settings.quality === '1080' ? 8000000 : 5000000,
-    audioBitsPerSecond: 192000,
+    // Bitrate standar video pendek; lebih tinggi tidak terlihat bedanya setelah
+    // diunggah dan membebani encoder iPhone.
+    videoBitsPerSecond: settings.quality === '1080' ? 6000000 : 4000000,
+    audioBitsPerSecond: 128000,
   });
   const parts = [];
   rec.ondataavailable = (e) => e.data && e.data.size && parts.push(e.data);
@@ -683,8 +685,9 @@ function startRecorder() {
       resolve(new Blob(parts, { type: rec.mimeType || mimeType || 'video/mp4' }));
     };
   });
-  // Tanpa timeslice agar file MP4 dibuat utuh sekali di akhir, bukan terpotong-potong.
-  rec.start();
+  // Data diambil tiap detik. Tanpa ini, rekaman di iPhone bisa membeku setelah
+  // belasan detik karena seluruh video ditahan di memori sampai selesai.
+  rec.start(1000);
   recorder = { rec, done };
 }
 
