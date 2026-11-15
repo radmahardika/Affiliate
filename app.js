@@ -12,6 +12,7 @@ const DEFAULT_SETTINGS = {
   speed: 4,
   countdown: true,
   voiceProcessing: false,
+  boost: 'medium',
   mirror: false,
   quality: '1080',
   recordMode: 'direct',
@@ -217,6 +218,8 @@ bindSetting('set-height', 'height', 'value', Number);
 bindSetting('set-shade', 'shade', 'value', Number);
 bindSetting('set-countdown', 'countdown', 'checked', Boolean);
 bindSetting('set-voice', 'voiceProcessing', 'checked', Boolean);
+bindSetting('set-boost', 'boost', 'value', String);
+$('set-boost').addEventListener('change', () => applyBoost());
 $('set-voice').addEventListener('change', () => {
   // Pengaturan mikrofon baru berlaku setelah mikrofon dibuka ulang.
   if (videoTrack && !recording) {
@@ -458,6 +461,7 @@ const canvas = document.createElement('canvas');
 const ctx = canvas.getContext('2d');
 let recording = false; // satu sesi rekam, dari tombol rekam sampai tombol stop
 let recorder = null;   // { rec, done } untuk klip yang sedang direkam
+let micInfo = '';      // ringkasan pemrosesan mikrofon saat merekam
 let clips = [];
 let recordStart = 0;
 let timerId = null;
@@ -516,21 +520,54 @@ function scheduleDraw(gen) {
   else requestAnimationFrame(() => drawFrame(gen));
 }
 
-// Mode satu file memakai satu perekam sepanjang sesi, jadi suaranya dialirkan lewat
-// Web Audio agar mikrofon baru setelah ganti kamera bisa disambungkan tanpa memutus rekaman.
+// Suara dialirkan lewat Web Audio bila dikeraskan, dan selalu di mode satu file
+// (satu perekam sepanjang sesi, jadi mikrofon baru setelah ganti kamera bisa
+// disambungkan tanpa memutus rekaman).
+// Rantainya: mikrofon → kompresor (meratakan suara pelan/keras) → penguat → limiter.
+const BOOST_GAIN = { off: 1, medium: 2, high: 3.2 };
 let audioCtx = null;
 let audioDest = null;
 let audioSrc = null;
+let audioIn = null;
+let boostGain = null;
+
+function useAudioMixer() {
+  return canvasMode() || settings.boost !== 'off';
+}
 
 function prepareAudioMixer() {
   const AC = window.AudioContext || window.webkitAudioContext;
   if (!AC) return;
   if (!audioCtx) {
-    audioCtx = new AC();
+    audioCtx = new AC({ sampleRate: 48000 });
     audioDest = audioCtx.createMediaStreamDestination();
+
+    const comp = audioCtx.createDynamicsCompressor();
+    comp.threshold.value = -24;
+    comp.knee.value = 12;
+    comp.ratio.value = 3;
+    comp.attack.value = 0.005;
+    comp.release.value = 0.25;
+
+    boostGain = audioCtx.createGain();
+
+    const limiter = audioCtx.createDynamicsCompressor();
+    limiter.threshold.value = -1.5;
+    limiter.knee.value = 0;
+    limiter.ratio.value = 20;
+    limiter.attack.value = 0.001;
+    limiter.release.value = 0.1;
+
+    comp.connect(boostGain).connect(limiter).connect(audioDest);
+    audioIn = comp;
   }
+  applyBoost();
   // Harus dipanggil langsung dari ketukan agar iPhone mengizinkan audio berjalan.
   audioCtx.resume().catch(() => {});
+}
+
+function applyBoost() {
+  if (boostGain) boostGain.gain.value = BOOST_GAIN[settings.boost] || 1;
 }
 
 function connectMic() {
@@ -538,13 +575,24 @@ function connectMic() {
   audioSrc = null;
   if (!audioCtx || !audioTrack) return;
   audioSrc = audioCtx.createMediaStreamSource(new MediaStream([audioTrack]));
-  audioSrc.connect(audioDest);
+  audioSrc.connect(audioIn);
 }
 
-function mixedAudioTrack() {
-  if (!audioDest) return audioTrack;
+function recordingAudioTrack() {
+  if (!useAudioMixer() || !audioDest) return audioTrack;
   connectMic();
   return audioDest.stream.getAudioTracks()[0];
+}
+
+// Pemrosesan yang benar-benar dipakai iPhone, untuk ditampilkan di layar hasil.
+function micSummary() {
+  const s = audioTrack && audioTrack.getSettings ? audioTrack.getSettings() : null;
+  if (!s) return 'tidak diketahui';
+  const on = ['echoCancellation', 'noiseSuppression', 'autoGainControl'].filter((k) => s[k] === true);
+  const names = { echoCancellation: 'peredam gema', noiseSuppression: 'peredam bising', autoGainControl: 'volume otomatis' };
+  const processing = on.length ? on.map((k) => names[k]).join(', ') + ' AKTIF' : 'pemrosesan mati';
+  const boost = { off: 'asli', medium: 'keras', high: 'sangat keras' }[settings.boost];
+  return `${processing} · volume ${boost}` + (s.sampleRate ? ` · ${s.sampleRate / 1000} kHz` : '');
 }
 
 function startRecorder() {
@@ -560,8 +608,9 @@ function startRecorder() {
   } else {
     tracks.push(videoTrack);
   }
-  const audio = canvasMode() ? mixedAudioTrack() : audioTrack;
+  const audio = recordingAudioTrack();
   if (audio) tracks.push(audio);
+  micInfo = micSummary();
 
   const mimeType = pickMimeType();
   const rec = new MediaRecorder(new MediaStream(tracks), {
@@ -632,7 +681,7 @@ async function startSession() {
   }
   starting = true;
   $('btn-shutter').disabled = true;
-  if (canvasMode()) prepareAudioMixer();
+  if (useAudioMixer()) prepareAudioMixer();
   setScrolling(false);
   await countdown();
   await ensureAudio();
@@ -686,7 +735,7 @@ function playClip(index) {
   if (pb.src) URL.revokeObjectURL(pb.src);
   pb.src = URL.createObjectURL(clips[index]);
   $('no-audio').classList.add('hidden');
-  $('clip-format').textContent = 'Format: ' + (clips[index].type || 'tidak diketahui');
+  $('clip-format').textContent = `Format: ${clips[index].type || 'tidak diketahui'} · Mic: ${micInfo}`;
   pb.onloadedmetadata = () => {
     // Safari bisa melaporkan jumlah track suara; browser lain dilewati.
     if (pb.audioTracks && pb.audioTracks.length === 0) $('no-audio').classList.remove('hidden');
