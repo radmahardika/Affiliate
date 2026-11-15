@@ -321,3 +321,14 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
 .copy-btn { width: 100%; margin-top: 8px; }
 .list .btn-del { font-size: 18px; padding: 6px 8px; }
+
+/* ---------- Rekaman tersimpan ---------- */
+.gallery-entry { padding: 12px 16px 0; }
+.btn.wide { width: 100%; }
+.bar-title { font-weight: 600; }
+.hint.pad { padding: 12px 16px 0; }
+.video-item { flex-direction: column; align-items: stretch !important; }
+.video-row { display: flex; align-items: center; gap: 8px; }
+.video-item video { width: 100%; max-height: 60vh; margin-top: 10px; border-radius: 12px; background: #000; }
+.video-item .ok { color: #30d158; }
+.save-status { color: var(--text); padding-bottom: 0; }

@@ -13,6 +13,7 @@ const DEFAULT_SETTINGS = {
   countdown: true,
   voiceProcessing: false,
   boost: 'medium',
+  autoSave: true,
   mirror: false,
   quality: '1080',
   recordMode: 'direct',
@@ -128,6 +129,7 @@ function renderLibrary() {
       list.appendChild(li);
     });
   show('view-library');
+  if (typeof refreshGalleryButton === 'function') refreshGalleryButton();
 }
 
 function currentScript() {
@@ -219,6 +221,7 @@ bindSetting('set-shade', 'shade', 'value', Number);
 bindSetting('set-countdown', 'countdown', 'checked', Boolean);
 bindSetting('set-voice', 'voiceProcessing', 'checked', Boolean);
 bindSetting('set-boost', 'boost', 'value', String);
+bindSetting('set-autosave', 'autoSave', 'checked', Boolean);
 $('set-boost').addEventListener('change', () => applyBoost());
 $('set-voice').addEventListener('change', () => {
   // Pengaturan mikrofon baru berlaku setelah mikrofon dibuka ulang.
@@ -462,6 +465,8 @@ const ctx = canvas.getContext('2d');
 let recording = false; // satu sesi rekam, dari tombol rekam sampai tombol stop
 let recorder = null;   // { rec, done } untuk klip yang sedang direkam
 let micInfo = '';      // ringkasan pemrosesan mikrofon saat merekam
+let sessionStored = Promise.resolve([]); // id rekaman sesi terakhir di penyimpanan aplikasi
+let sessionShared = false; // rekaman sesi terakhir sudah dikirim ke menu Simpan
 let clips = [];
 let recordStart = 0;
 let timerId = null;
@@ -708,8 +713,26 @@ async function stopSession(keep = true) {
   $('btn-shutter').classList.remove('recording');
   setScrolling(false);
   await finishRecorder();
-  if (keep && clips.length) openReview();
-  else clips = [];
+  if (!keep || !clips.length) {
+    clips = [];
+    return;
+  }
+  openReview();
+  // Simpan dulu di aplikasi supaya tidak hilang, lalu langsung buka menu
+  // "Simpan Video" selagi ketukan tombol stop masih dianggap baru.
+  const s = currentScript();
+  sessionStored = storeClips(clips, s && s.title);
+  sessionShared = false;
+  sessionStored.then((ids) => {
+    if (sessionShared) return;
+    setSaveStatus(
+      ids.length
+        ? '✓ Tersimpan otomatis di aplikasi (menu 🎞 Rekaman). Ketuk ⬇︎ Simpan video untuk memasukkan ke galeri Foto.'
+        : 'Tidak bisa menyimpan di aplikasi. Ketuk ⬇︎ Simpan video agar rekaman tidak hilang.'
+    );
+  });
+  // Hanya bila ada menu Bagikan; di browser lain tidak mengunduh tanpa diminta.
+  if (settings.autoSave && navigator.canShare && navigator.canShare({ files: sessionFiles() })) saveSession();
 }
 
 $('btn-shutter').onclick = () => (recording ? stopSession(true) : startSession());
@@ -757,6 +780,7 @@ function openReview() {
     tabs.appendChild(b);
   });
   $('btn-save').textContent = clips.length > 1 ? `⬇︎ Simpan ${clips.length} video` : '⬇︎ Simpan video';
+  setSaveStatus('Menyimpan…');
   playClip(0);
   show('view-review');
 }
@@ -766,14 +790,16 @@ $('btn-retake').onclick = () => {
   openRecorder();
 };
 
-$('btn-save').onclick = async () => {
-  const files = clips.map((blob, i) => new File([blob], videoFileName(blob, i), { type: blob.type }));
+// Mengembalikan 'shared', 'cancelled', 'blocked' (iPhone menolak karena bukan dari
+// ketukan langsung) atau 'downloaded' (browser tanpa menu Bagikan).
+async function shareVideos(files) {
   if (navigator.canShare && navigator.canShare({ files })) {
     try {
       await navigator.share({ files });
-      return;
+      return 'shared';
     } catch (e) {
-      if (e.name === 'AbortError') return;
+      if (e.name === 'AbortError') return 'cancelled';
+      if (e.name === 'NotAllowedError') return 'blocked';
     }
   }
   files.forEach((file) => {
@@ -785,7 +811,30 @@ $('btn-save').onclick = async () => {
     a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 10000);
   });
-};
+  return 'downloaded';
+}
+
+function sessionFiles() {
+  return clips.map((blob, i) => new File([blob], videoFileName(blob, i), { type: blob.type }));
+}
+
+function setSaveStatus(text) {
+  $('save-status').textContent = text;
+}
+
+async function saveSession() {
+  const result = await shareVideos(sessionFiles());
+  if (result === 'shared' || result === 'downloaded') {
+    sessionShared = true;
+    setSaveStatus('✓ Terkirim ke menu Simpan. Rekaman juga tetap ada di menu 🎞 Rekaman.');
+    const ids = await sessionStored;
+    markExported(ids).catch(() => {});
+  } else if (result === 'blocked') {
+    setSaveStatus('Ketuk ⬇︎ Simpan video untuk memasukkan ke galeri Foto.');
+  }
+}
+
+$('btn-save').onclick = saveSession;
 
 // ---------- Mulai ----------
 

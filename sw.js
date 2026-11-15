@@ -1,6 +1,6 @@
 // Menyimpan file aplikasi agar tetap bisa dibuka tanpa internet.
-const CACHE = 'prompter-v10';
-const FILES = ['./', 'index.html', 'style.css', 'app.js', 'generator.js', 'manifest.webmanifest', 'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png'];
+const CACHE = 'prompter-v11';
+const FILES = ['./', 'index.html', 'style.css', 'app.js', 'generator.js', 'gallery.js', 'manifest.webmanifest', 'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));

@@ -25,8 +25,20 @@
         <button id="btn-new" class="btn primary">+ Baru</button>
       </div>
     </header>
+    <div class="gallery-entry"><button id="btn-gallery" class="btn wide">🎞 Rekaman tersimpan</button></div>
     <ul id="script-list" class="list"></ul>
     <p id="empty-hint" class="hint">Belum ada naskah. Ketuk <b>✨ Buat naskah</b> untuk dibuatkan otomatis, atau <b>+ Baru</b> untuk menulis sendiri.</p>
+  </section>
+
+  <!-- Rekaman tersimpan -->
+  <section id="view-gallery" class="view">
+    <header class="bar">
+      <button id="btn-gallery-back" class="btn ghost">‹ Kembali</button>
+      <span class="bar-title">Rekaman</span>
+    </header>
+    <p id="gallery-hint" class="hint small left pad"></p>
+    <ul id="video-list" class="list"></ul>
+    <p id="gallery-empty" class="hint hidden">Belum ada rekaman.</p>
   </section>
 
   <!-- Generator naskah & hook -->
@@ -132,6 +144,9 @@
         <label class="row">Latar teks gelap
           <input id="set-shade" type="range" min="0" max="90" step="10">
         </label>
+        <label class="row check">Buka "Simpan Video" otomatis setelah rekam
+          <input id="set-autosave" type="checkbox">
+        </label>
         <label class="row check">Hitung mundur 3-2-1
           <input id="set-countdown" type="checkbox">
         </label>
@@ -175,11 +190,13 @@
       <button id="btn-retake" class="btn">↺ Rekam ulang</button>
       <button id="btn-save" class="btn primary">⬇︎ Simpan video</button>
     </div>
+    <p id="save-status" class="hint small save-status"></p>
     <p id="clip-format" class="hint small"></p>
     <p class="hint small">Di iPhone: ketuk <b>Simpan video</b> → pilih <b>Simpan Video</b> agar masuk ke galeri Foto.</p>
   </section>
 
   <script src="app.js"></script>
   <script src="generator.js"></script>
+  <script src="gallery.js"></script>
 </body>
 </html>
