@@ -349,6 +349,8 @@ async function startCamera() {
   cam.srcObject = new MediaStream([videoTrack]);
   await cam.play().catch(() => {});
   cam.classList.toggle('mirror', facing === 'user');
+  lastFrameAt = performance.now();
+  watchFrames();
 }
 
 function replaceAudio(track) {
@@ -374,13 +376,15 @@ function stopCamera() {
   $('cam').srcObject = null;
 }
 
-async function flipCamera() {
+// Membuka ulang kamera: untuk ganti kamera depan/belakang, atau untuk menyambung
+// lagi kamera yang berhenti mengirim gambar di tengah rekaman.
+async function restartCamera(newFacing) {
   if (switching) return;
   switching = true;
   $('btn-flip').disabled = true;
   $('btn-shutter').disabled = true;
   const previous = facing;
-  facing = facing === 'user' ? 'environment' : 'user';
+  facing = newFacing;
   // Mode mulus merekam langsung dari track kamera, jadi klip yang sedang
   // berjalan ditutup dulu dan klip baru dimulai dengan kamera berikutnya.
   const split = recording && !canvasMode();
@@ -407,12 +411,48 @@ async function flipCamera() {
         scheduleDraw();
       }
     }
+    lastFrameAt = performance.now();
+    watchFrames();
     $('btn-flip').disabled = false;
     $('btn-shutter').disabled = false;
   }
 }
 
-$('btn-flip').onclick = flipCamera;
+$('btn-flip').onclick = () => restartCamera(facing === 'user' ? 'environment' : 'user');
+
+// ---------- Penjaga kamera ----------
+// iPhone kadang menghentikan kamera di tengah rekaman (misalnya saat pengaturan
+// audio berubah), sehingga gambar membeku sementara suara tetap jalan. Bila
+// selama 1,5 detik tidak ada gambar baru, kamera dibuka ulang otomatis.
+
+let lastFrameAt = 0;
+let frameGen = 0;
+let stallCount = 0;
+
+function watchFrames() {
+  const cam = $('cam');
+  if (!('requestVideoFrameCallback' in cam)) return;
+  const gen = ++frameGen;
+  const tick = () => {
+    if (gen !== frameGen) return;
+    lastFrameAt = performance.now();
+    cam.requestVideoFrameCallback(tick);
+  };
+  cam.requestVideoFrameCallback(tick);
+}
+
+function cameraStalled() {
+  if (!videoTrack) return false;
+  if (videoTrack.readyState === 'ended' || videoTrack.muted) return true;
+  return 'requestVideoFrameCallback' in $('cam') && performance.now() - lastFrameAt > 1500;
+}
+
+setInterval(() => {
+  if (recording && !switching && cameraStalled()) {
+    stallCount += 1;
+    restartCamera(facing);
+  }
+}, 500);
 
 async function requestWakeLock() {
   try {
@@ -571,6 +611,15 @@ function prepareAudioMixer() {
   audioCtx.resume().catch(() => {});
 }
 
+// Pengolah suara dimatikan total bila tidak dipakai, agar tidak mengubah
+// pengaturan audio iPhone di latar belakang.
+function closeAudioMixer() {
+  if (!audioCtx) return;
+  if (audioSrc) audioSrc.disconnect();
+  audioCtx.close().catch(() => {});
+  audioCtx = audioDest = audioSrc = audioIn = boostGain = null;
+}
+
 function applyBoost() {
   if (boostGain) boostGain.gain.value = BOOST_GAIN[settings.boost] || 1;
 }
@@ -687,9 +736,13 @@ async function startSession() {
   starting = true;
   $('btn-shutter').disabled = true;
   if (useAudioMixer()) prepareAudioMixer();
+  else closeAudioMixer();
   setScrolling(false);
   await countdown();
   await ensureAudio();
+  // Pastikan kamera masih mengirim gambar sebelum mulai merekam.
+  if (cameraStalled()) await restartCamera(facing);
+  stallCount = 0;
   starting = false;
   $('btn-shutter').disabled = false;
 
@@ -713,6 +766,7 @@ async function stopSession(keep = true) {
   $('btn-shutter').classList.remove('recording');
   setScrolling(false);
   await finishRecorder();
+  closeAudioMixer();
   if (!keep || !clips.length) {
     clips = [];
     return;
@@ -758,7 +812,8 @@ function playClip(index) {
   if (pb.src) URL.revokeObjectURL(pb.src);
   pb.src = URL.createObjectURL(clips[index]);
   $('no-audio').classList.add('hidden');
-  $('clip-format').textContent = `Format: ${clips[index].type || 'tidak diketahui'} · Mic: ${micInfo}`;
+  const stalls = stallCount ? ` · ⚠︎ kamera terhenti ${stallCount}× lalu disambung ulang` : '';
+  $('clip-format').textContent = `Format: ${clips[index].type || 'tidak diketahui'} · Mic: ${micInfo}${stalls}`;
   pb.onloadedmetadata = () => {
     // Safari bisa melaporkan jumlah track suara; browser lain dilewati.
     if (pb.audioTracks && pb.audioTracks.length === 0) $('no-audio').classList.remove('hidden');
