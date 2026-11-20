@@ -233,8 +233,18 @@ $('set-voice').addEventListener('change', () => {
 bindSetting('set-mirror', 'mirror', 'checked', Boolean);
 bindSetting('set-quality', 'quality', 'value', String);
 bindSetting('set-mode', 'recordMode', 'value', String);
+$('set-mode').addEventListener('change', () => {
+  // Zoom digital hanya ada di mode satu file, jadi mulai lagi dari 1×.
+  zoomLevel = 1;
+  $('cam').style.setProperty('--zoom', 1);
+  if (zoomMode() === 'camera') setZoom(1);
+  else renderZoomButtons();
+});
 
-$('btn-settings').onclick = () => $('settings').classList.remove('hidden');
+$('btn-settings').onclick = () => {
+  renderZoomButtons();
+  $('settings').classList.remove('hidden');
+};
 $('btn-settings-done').onclick = () => $('settings').classList.add('hidden');
 
 // ---------- Gulir teks ----------
@@ -357,6 +367,7 @@ async function startCamera() {
   lastFrameAt = performance.now();
   watchFrames();
   if (zoomLevel !== 1) setZoom(zoomLevel);
+  else renderZoomButtons();
 }
 
 function replaceAudio(track) {
@@ -427,6 +438,7 @@ async function restartCamera(newFacing) {
 $('btn-flip').onclick = () => {
   // Rentang zoom tiap kamera berbeda, jadi kamera baru mulai dari 1×.
   zoomLevel = 1;
+  $('cam').style.setProperty('--zoom', 1);
   restartCamera(facing === 'user' ? 'environment' : 'user');
 };
 
@@ -452,24 +464,65 @@ function showZoomLabel(text) {
   zoomLabelTimer = setTimeout(() => el.classList.add('hidden'), 1200);
 }
 
-function setZoom(z) {
+// 'camera': zoom kamera iPhone (iOS 17+); 'digital': memperbesar gambar sendiri,
+// hanya bisa di mode satu file karena gambarnya digambar ulang ke kanvas.
+function zoomMode() {
+  if (zoomRange()) return 'camera';
+  return canvasMode() ? 'digital' : 'none';
+}
+
+function zoomMax() {
   const range = zoomRange();
-  if (!range) {
+  return range ? Math.min(range.max, 10) : canvasMode() ? 4 : 1;
+}
+
+function setZoom(z) {
+  const mode = zoomMode();
+  if (mode === 'none') {
     zoomLevel = 1;
-    showZoomLabel('Zoom tidak didukung di HP ini');
+    showZoomLabel('Zoom belum didukung kamera HP ini. Pilih ⚙︎ Mode rekam: Satu file untuk zoom digital.');
+    renderZoomButtons();
     return;
   }
-  zoomLevel = Math.min(range.max, Math.max(range.min, z));
-  // Satu perubahan per frame layar, agar kamera tidak kebanjiran permintaan.
-  if (!zoomFrame) {
-    zoomFrame = requestAnimationFrame(() => {
-      zoomFrame = null;
-      if (videoTrack) videoTrack.applyConstraints({ advanced: [{ zoom: zoomLevel }] }).catch(() => {});
-    });
+  const range = zoomRange();
+  zoomLevel = Math.min(zoomMax(), Math.max(range ? range.min : 1, z));
+  if (mode === 'camera') {
+    // Satu perubahan per frame layar, agar kamera tidak kebanjiran permintaan.
+    // Batasan awal (resolusi, fps) ikut dikirim karena applyConstraints menggantinya.
+    if (!zoomFrame) {
+      zoomFrame = requestAnimationFrame(() => {
+        zoomFrame = null;
+        if (videoTrack) videoTrack.applyConstraints({ ...videoConstraints(), advanced: [{ zoom: zoomLevel }] }).catch(() => {});
+      });
+    }
   }
+  $('cam').style.setProperty('--zoom', mode === 'digital' ? zoomLevel : 1);
   showZoomLabel(zoomLevel.toFixed(1) + '×');
-  $('btn-zoom-reset').classList.toggle('hidden', zoomLevel <= (range.min || 1) + 0.05);
-  $('btn-zoom-reset').textContent = zoomLevel.toFixed(1) + '× → 1×';
+  renderZoomButtons();
+}
+
+function renderZoomButtons() {
+  const row = $('zoom-row');
+  const max = zoomMax();
+  const steps = [1, 2, 3].filter((s) => s === 1 || s <= max + 0.01);
+  row.innerHTML = '';
+  steps.forEach((s) => {
+    const b = document.createElement('button');
+    const active = Math.abs(zoomLevel - s) < 0.05;
+    b.className = 'zoom-chip' + (active ? ' active' : '');
+    b.textContent = active || s !== 1 ? `${s}×` : '1×';
+    b.onclick = () => setZoom(s);
+    row.appendChild(b);
+  });
+  // Tampilkan level saat ini bila di antara tombol (hasil cubit).
+  if (!steps.some((s) => Math.abs(zoomLevel - s) < 0.05)) {
+    const cur = document.createElement('span');
+    cur.className = 'zoom-chip active';
+    cur.textContent = zoomLevel.toFixed(1) + '×';
+    row.appendChild(cur);
+  }
+  const info = { camera: `kamera iPhone (1–${max.toFixed(0)}×)`, digital: 'digital (mode Satu file)', none: 'tidak tersedia di mode Mulus pada HP ini' };
+  $('zoom-info').textContent = 'Zoom: ' + info[zoomMode()];
 }
 
 function pinchBusy() {
@@ -504,7 +557,7 @@ function touchDistance(t) {
   el.addEventListener('touchcancel', end);
 })();
 
-$('btn-zoom-reset').onclick = () => setZoom(1);
+
 
 // ---------- Penjaga kamera ----------
 // iPhone kadang menghentikan kamera di tengah rekaman (misalnya saat pengaturan
@@ -557,7 +610,7 @@ async function openRecorder() {
   setScroll(0);
   showMessage('');
   zoomLevel = 1;
-  $('btn-zoom-reset').classList.add('hidden');
+  $('cam').style.setProperty('--zoom', 1);
 
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     showMessage('Browser ini tidak mendukung kamera. Buka lewat Safari dengan alamat https://');
@@ -630,7 +683,8 @@ function drawFrame(gen) {
   if (!switching && vw && vh && cam.readyState >= 2) {
     const cw = canvas.width;
     const ch = canvas.height;
-    const scale = Math.max(cw / vw, ch / vh);
+    const digital = zoomMode() === 'digital' ? zoomLevel : 1;
+    const scale = Math.max(cw / vw, ch / vh) * digital;
     const dw = vw * scale;
     const dh = vh * scale;
     ctx.save();

@@ -109,7 +109,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
   height: 100%;
   object-fit: cover;
 }
-#cam.mirror { transform: scaleX(-1); }
+#cam { transform: scale(var(--zoom, 1)); }
+#cam.mirror { transform: scaleX(-1) scale(var(--zoom, 1)); }
 
 .prompter {
   position: absolute;
@@ -348,15 +349,20 @@ button { font: inherit; color: inherit; cursor: pointer; }
   z-index: 4;
   pointer-events: none;
 }
-.zoom-reset {
-  display: block;
-  margin: 0 auto 12px;
+.zoom-row { display: flex; justify-content: center; gap: 8px; margin-bottom: 12px; }
+.zoom-chip {
+  min-width: 40px;
+  height: 32px;
   border: none;
   border-radius: 99px;
-  background: rgba(0, 0, 0, 0.55);
-  color: var(--cue);
-  font-size: 14px;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 13px;
   font-weight: 600;
-  padding: 6px 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
 }
+.zoom-chip.active { color: var(--cue); background: rgba(0, 0, 0, 0.7); }
 .review-bar { padding: 4px 8px; }
