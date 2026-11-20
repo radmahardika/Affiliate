@@ -294,6 +294,10 @@ $('btn-faster').onclick = () => {
   });
   el.addEventListener('pointermove', (e) => {
     if (startY === null) return;
+    if (pinchBusy()) {
+      startY = null;
+      return;
+    }
     const dy = e.clientY - startY;
     if (Math.abs(dy) > 8) {
       moved = true;
@@ -304,6 +308,7 @@ $('btn-faster').onclick = () => {
   el.addEventListener('pointerup', () => {
     if (startY === null) return;
     startY = null;
+    if (pinchBusy()) return;
     if (moved) setScrolling(wasScrolling);
     else setScrolling(!wasScrolling);
   });
@@ -351,6 +356,7 @@ async function startCamera() {
   cam.classList.toggle('mirror', facing === 'user');
   lastFrameAt = performance.now();
   watchFrames();
+  if (zoomLevel !== 1) setZoom(zoomLevel);
 }
 
 function replaceAudio(track) {
@@ -418,7 +424,87 @@ async function restartCamera(newFacing) {
   }
 }
 
-$('btn-flip').onclick = () => restartCamera(facing === 'user' ? 'environment' : 'user');
+$('btn-flip').onclick = () => {
+  // Rentang zoom tiap kamera berbeda, jadi kamera baru mulai dari 1×.
+  zoomLevel = 1;
+  restartCamera(facing === 'user' ? 'environment' : 'user');
+};
+
+// ---------- Zoom (cubit dua jari) ----------
+// Memakai zoom kamera iPhone sendiri (iOS 17+), jadi hasil rekaman ikut ter-zoom.
+
+let zoomLevel = 1;
+let zoomFrame = null;
+let pinch = null;
+let pinchEndedAt = 0;
+let zoomLabelTimer = null;
+
+function zoomRange() {
+  const caps = videoTrack && videoTrack.getCapabilities ? videoTrack.getCapabilities() : null;
+  return caps && caps.zoom ? caps.zoom : null;
+}
+
+function showZoomLabel(text) {
+  const el = $('zoom-label');
+  el.textContent = text;
+  el.classList.remove('hidden');
+  clearTimeout(zoomLabelTimer);
+  zoomLabelTimer = setTimeout(() => el.classList.add('hidden'), 1200);
+}
+
+function setZoom(z) {
+  const range = zoomRange();
+  if (!range) {
+    zoomLevel = 1;
+    showZoomLabel('Zoom tidak didukung di HP ini');
+    return;
+  }
+  zoomLevel = Math.min(range.max, Math.max(range.min, z));
+  // Satu perubahan per frame layar, agar kamera tidak kebanjiran permintaan.
+  if (!zoomFrame) {
+    zoomFrame = requestAnimationFrame(() => {
+      zoomFrame = null;
+      if (videoTrack) videoTrack.applyConstraints({ advanced: [{ zoom: zoomLevel }] }).catch(() => {});
+    });
+  }
+  showZoomLabel(zoomLevel.toFixed(1) + '×');
+  $('btn-zoom-reset').classList.toggle('hidden', zoomLevel <= (range.min || 1) + 0.05);
+  $('btn-zoom-reset').textContent = zoomLevel.toFixed(1) + '× → 1×';
+}
+
+function pinchBusy() {
+  return pinch !== null || performance.now() - pinchEndedAt < 300;
+}
+
+function touchDistance(t) {
+  return Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+}
+
+(function bindPinchZoom() {
+  const el = $('view-recorder');
+  el.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) pinch = { dist: touchDistance(e.touches), zoom: zoomLevel };
+  });
+  el.addEventListener(
+    'touchmove',
+    (e) => {
+      if (!pinch || e.touches.length !== 2) return;
+      e.preventDefault();
+      setZoom(pinch.zoom * (touchDistance(e.touches) / pinch.dist));
+    },
+    { passive: false }
+  );
+  const end = (e) => {
+    if (pinch && e.touches.length < 2) {
+      pinch = null;
+      pinchEndedAt = performance.now();
+    }
+  };
+  el.addEventListener('touchend', end);
+  el.addEventListener('touchcancel', end);
+})();
+
+$('btn-zoom-reset').onclick = () => setZoom(1);
 
 // ---------- Penjaga kamera ----------
 // iPhone kadang menghentikan kamera di tengah rekaman (misalnya saat pengaturan
@@ -470,6 +556,8 @@ async function openRecorder() {
   applySettings();
   setScroll(0);
   showMessage('');
+  zoomLevel = 1;
+  $('btn-zoom-reset').classList.add('hidden');
 
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     showMessage('Browser ini tidak mendukung kamera. Buka lewat Safari dengan alamat https://');
@@ -842,6 +930,14 @@ function openReview() {
   playClip(0);
   show('view-review');
 }
+
+$('btn-review-done').onclick = () => {
+  const pb = $('playback');
+  pb.pause();
+  if (pb.src) URL.revokeObjectURL(pb.src);
+  pb.removeAttribute('src');
+  renderLibrary();
+};
 
 $('btn-retake').onclick = () => {
   $('playback').pause();

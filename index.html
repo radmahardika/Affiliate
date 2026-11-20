@@ -115,7 +115,10 @@
       <button id="btn-settings" class="icon-btn" aria-label="Pengaturan">⚙︎</button>
     </div>
 
+    <div id="zoom-label" class="zoom-label hidden"></div>
+
     <div class="rec-bottom">
+      <button id="btn-zoom-reset" class="zoom-reset hidden" aria-label="Kembalikan zoom ke 1×">1×</button>
       <div class="speed-row">
         <button id="btn-slower" class="icon-btn small" aria-label="Lebih lambat">−</button>
         <span id="speed-label">Kecepatan 4</span>
@@ -183,6 +186,9 @@
 
   <!-- Hasil rekaman -->
   <section id="view-review" class="view review">
+    <div class="review-bar">
+      <button id="btn-review-done" class="btn ghost">‹ Selesai</button>
+    </div>
     <video id="playback" playsinline controls></video>
     <div id="clip-tabs" class="clip-tabs hidden"></div>
     <p id="no-audio" class="hint small warn hidden">⚠︎ Video ini tidak ada suaranya. Coba rekam ulang; kalau terus terjadi, kabari kami.</p>

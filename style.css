@@ -332,3 +332,31 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .video-item video { width: 100%; max-height: 60vh; margin-top: 10px; border-radius: 12px; background: #000; }
 .video-item .ok { color: #30d158; }
 .save-status { color: var(--text); padding-bottom: 0; }
+
+/* ---------- Zoom & tombol selesai ---------- */
+.zoom-label {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-weight: 700;
+  font-size: 20px;
+  padding: 8px 16px;
+  border-radius: 99px;
+  z-index: 4;
+  pointer-events: none;
+}
+.zoom-reset {
+  display: block;
+  margin: 0 auto 12px;
+  border: none;
+  border-radius: 99px;
+  background: rgba(0, 0, 0, 0.55);
+  color: var(--cue);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 6px 14px;
+}
+.review-bar { padding: 4px 8px; }
