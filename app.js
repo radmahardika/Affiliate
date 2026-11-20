@@ -366,6 +366,7 @@ async function startCamera() {
   cam.classList.toggle('mirror', facing === 'user');
   lastFrameAt = performance.now();
   watchFrames();
+  hwZoom = 1; // kamera yang baru dibuka belum ter-zoom
   if (zoomLevel !== 1) setZoom(zoomLevel);
   else renderZoomButtons();
 }
@@ -446,7 +447,9 @@ $('btn-flip').onclick = () => {
 // Memakai zoom kamera iPhone sendiri (iOS 17+), jadi hasil rekaman ikut ter-zoom.
 
 let zoomLevel = 1;
-let zoomFrame = null;
+let hwZoom = 1; // zoom yang sudah terpasang di kamera
+let zoomApplying = false;
+let zoomAppliedAt = 0;
 let pinch = null;
 let pinchEndedAt = 0;
 let zoomLabelTimer = null;
@@ -476,7 +479,10 @@ function zoomMax() {
   return range ? Math.min(range.max, 10) : canvasMode() ? 4 : 1;
 }
 
-function setZoom(z) {
+// live: jari masih mencubit. Selama itu hanya tampilan yang diperbesar (instan);
+// zoom kamera dipasang sekali saat jari dilepas, karena tiap perubahan zoom
+// membuat kamera iPhone menyesuaikan diri dan terasa nge-lag.
+function setZoom(z, live = false) {
   const mode = zoomMode();
   if (mode === 'none') {
     zoomLevel = 1;
@@ -486,19 +492,44 @@ function setZoom(z) {
   }
   const range = zoomRange();
   zoomLevel = Math.min(zoomMax(), Math.max(range ? range.min : 1, z));
-  if (mode === 'camera') {
-    // Satu perubahan per frame layar, agar kamera tidak kebanjiran permintaan.
-    // Batasan awal (resolusi, fps) ikut dikirim karena applyConstraints menggantinya.
-    if (!zoomFrame) {
-      zoomFrame = requestAnimationFrame(() => {
-        zoomFrame = null;
-        if (videoTrack) videoTrack.applyConstraints({ ...videoConstraints(), advanced: [{ zoom: zoomLevel }] }).catch(() => {});
-      });
-    }
+  const cam = $('cam');
+  if (mode === 'digital') {
+    cam.style.setProperty('--zoom', zoomLevel);
+  } else if (live) {
+    cam.style.setProperty('--zoom', zoomLevel / hwZoom);
+    // Sesekali ikut dipasang ke kamera agar tidak terlalu jauh dari tampilan.
+    if (!zoomApplying && performance.now() - zoomAppliedAt > 300) applyCameraZoom(zoomLevel);
+  } else {
+    applyCameraZoom(zoomLevel);
   }
-  $('cam').style.setProperty('--zoom', mode === 'digital' ? zoomLevel : 1);
   showZoomLabel(zoomLevel.toFixed(1) + '×');
-  renderZoomButtons();
+  if (!live) renderZoomButtons();
+}
+
+function applyCameraZoom(target) {
+  const cam = $('cam');
+  if (!videoTrack) return;
+  cam.style.setProperty('--zoom', target / hwZoom);
+  zoomApplying = true;
+  zoomAppliedAt = performance.now();
+  // Batasan awal (resolusi, fps) ikut dikirim karena applyConstraints menggantinya.
+  videoTrack
+    .applyConstraints({ ...videoConstraints(), advanced: [{ zoom: target }] })
+    .then(() => {
+      hwZoom = target;
+      // Sisa selisih (bila jari terus bergerak) tetap ditutup oleh tampilan.
+      cam.style.setProperty('--zoom', zoomLevel / hwZoom);
+    })
+    .catch(() => {
+      zoomLevel = hwZoom;
+      cam.style.setProperty('--zoom', 1);
+      renderZoomButtons();
+    })
+    .finally(() => {
+      zoomApplying = false;
+      // Bila jari sudah dilepas saat kamera masih menyesuaikan, pasang zoom terakhir.
+      if (!pinch && zoomLevel !== hwZoom && zoomMode() === 'camera') applyCameraZoom(zoomLevel);
+    });
 }
 
 function renderZoomButtons() {
@@ -543,7 +574,7 @@ function touchDistance(t) {
     (e) => {
       if (!pinch || e.touches.length !== 2) return;
       e.preventDefault();
-      setZoom(pinch.zoom * (touchDistance(e.touches) / pinch.dist));
+      setZoom(pinch.zoom * (touchDistance(e.touches) / pinch.dist), true);
     },
     { passive: false }
   );
@@ -551,6 +582,8 @@ function touchDistance(t) {
     if (pinch && e.touches.length < 2) {
       pinch = null;
       pinchEndedAt = performance.now();
+      if (zoomApplying) renderZoomButtons(); // zoom terakhir dipasang setelah yang berjalan selesai
+      else setZoom(zoomLevel);
     }
   };
   el.addEventListener('touchend', end);
